@@ -48,6 +48,24 @@ new class extends Component
         $this->resetValidation();
     }
 
+    /** Lien en clair, affiché une seule fois juste après sa création (EF-38). */
+    public ?string $newLink = null;
+
+    public function createLink(): void
+    {
+        $this->authorize('update', $this->tenant);
+        $this->newLink = app(\App\Modules\Metering\Actions\CreateTenantAccessLink::class)->execute($this->tenant, auth()->user());
+        $this->statusMessage = null;
+    }
+
+    public function revokeLink(): void
+    {
+        $this->authorize('update', $this->tenant);
+        app(\App\Modules\Metering\Actions\RevokeTenantAccessLink::class)->execute($this->tenant);
+        $this->newLink = null;
+        $this->statusMessage = 'Le lien personnel est révoqué : il ne fonctionne plus.';
+    }
+
     public function archive(): void
     {
         $this->authorize('delete', $this->tenant);
@@ -110,6 +128,50 @@ new class extends Component
         @else
             <p class="text-sm text-sand-900">{{ $tenant->displayPhone() ?? 'Pas de téléphone' }}</p>
         @endif
+    </x-ui.card>
+
+    @php
+        $activeLink = $tenant->activeAccessLink();
+    @endphp
+    <x-ui.card class="space-y-3">
+        <h2 class="text-base font-semibold text-sand-900">Accès du locataire</h2>
+        <p class="text-sm text-sand-600">
+            Un lien personnel permet à {{ $tenant->name }} de consulter ses participations des mois clôturés et leurs fiches PDF,
+            sans compte et sans rien pouvoir modifier.
+        </p>
+
+        @if ($newLink)
+            @php
+                $message = "Bonjour {$tenant->name}, voici votre lien personnel pour consulter votre participation aux frais d'eau et d'électricité : {$newLink}";
+            @endphp
+            <div class="space-y-2 rounded-[var(--radius)] border border-success-border bg-success-bg p-3">
+                <p class="text-sm font-medium text-sand-900">Lien créé. Envoyez-le maintenant : il ne sera plus affiché ensuite.</p>
+                <input type="text" readonly value="{{ $newLink }}" onclick="this.select()" aria-label="Lien personnel"
+                    class="block w-full h-11 rounded-[var(--radius)] border border-sand-300 bg-white text-sm text-sand-900" />
+                <div class="grid grid-cols-2 gap-2">
+                    <x-ui.button as="a" size="sm" target="_blank" rel="noopener"
+                        href="https://wa.me/{{ $tenant->phone ? ltrim($tenant->phone, '+') : '' }}?text={{ rawurlencode($message) }}">Envoyer par WhatsApp</x-ui.button>
+                    <x-ui.button as="a" size="sm" variant="outline" href="sms:{{ $tenant->phone }}?body={{ rawurlencode($message) }}">Envoyer par SMS</x-ui.button>
+                </div>
+            </div>
+        @elseif ($activeLink)
+            <p class="text-sm text-sand-700">
+                Lien actif depuis le {{ $activeLink->created_at->timezone(config('app.timezone'))->format('d/m/Y') }}
+                @if ($activeLink->last_used_at) · consulté le {{ $activeLink->last_used_at->timezone(config('app.timezone'))->format('d/m/Y') }} @endif
+            </p>
+        @endif
+
+        <div class="flex flex-wrap gap-2">
+            <x-ui.button size="sm" wire:click="createLink"
+                :wire:confirm="$activeLink ? 'Créer un nouveau lien ? L\'ancien cessera de fonctionner.' : null">
+                {{ $activeLink ? 'Nouveau lien' : 'Créer le lien personnel' }}
+            </x-ui.button>
+            @if ($activeLink)
+                <x-ui.button size="sm" variant="outline" wire:click="revokeLink" wire:confirm="Révoquer le lien ? {{ $tenant->name }} ne pourra plus consulter ses fiches.">
+                    Révoquer
+                </x-ui.button>
+            @endif
+        </div>
     </x-ui.card>
 
     <x-ui.card class="space-y-3">

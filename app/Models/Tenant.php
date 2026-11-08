@@ -49,6 +49,19 @@ final class Tenant extends Model
         return $this->hasMany(Occupancy::class);
     }
 
+    /**
+     * @return HasMany<TenantAccessLink, $this>
+     */
+    public function accessLinks(): HasMany
+    {
+        return $this->hasMany(TenantAccessLink::class);
+    }
+
+    public function activeAccessLink(): ?TenantAccessLink
+    {
+        return $this->accessLinks()->whereNull('revoked_at')->latest('id')->first();
+    }
+
     public function hasCurrentOccupancy(): bool
     {
         return $this->occupancies()->whereNull('ended_on')->exists();

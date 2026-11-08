@@ -14,6 +14,16 @@ Route::livewire('/conditions-utilisation/accepter', 'app.legal.accepter')
     ->middleware('auth')
     ->name('legal.accept');
 
+// EF-38 / UC-19 : espace locataire par lien personnel, sans compte, en lecture seule.
+Route::middleware('throttle:60,1')->group(function (): void {
+    Route::get('/locataire/{token}', [App\Modules\Metering\Http\Controllers\TenantPortalController::class, 'show'])
+        ->name('tenant.portal')
+        ->where('token', '[A-Za-z0-9]{48}');
+    Route::get('/locataire/{token}/fiche/{occupancy}/{mois}', [App\Modules\Metering\Http\Controllers\TenantPortalController::class, 'pdf'])
+        ->name('tenant.portal.pdf')
+        ->where(['token' => '[A-Za-z0-9]{48}', 'occupancy' => '\d+', 'mois' => '\d{4}-\d{2}']);
+});
+
 Route::middleware(['auth', 'verified', 'terms'])->group(function (): void {
     // UC-02, UC-22 : maisons, compteurs principaux, mode de calcul (lot 1, tranche 1).
     Route::livewire('/maisons', 'app.maisons.index')->name('maisons.index');
