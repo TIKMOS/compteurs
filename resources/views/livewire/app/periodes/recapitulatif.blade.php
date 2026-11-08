@@ -3,6 +3,8 @@
 use App\Models\BillingPeriod;
 use App\Models\House;
 use App\Modules\Metering\Actions\CloseBillingPeriod;
+use App\Modules\Metering\Actions\ReopenBillingPeriod;
+use App\Modules\Metering\Exceptions\ReopenRefusedException;
 use App\Modules\Metering\Exceptions\IncompletePeriodException;
 use App\Modules\Metering\Exceptions\PeriodClosedException;
 use App\Modules\Metering\Livewire\PeriodSummary;
@@ -27,6 +29,10 @@ new class extends Component
 
     /** @var list<string> */
     public array $closeErrors = [];
+
+    public bool $reopening = false;
+
+    public string $reopenReason = '';
 
     public function mount(House $house, string $mois): void
     {
@@ -78,6 +84,36 @@ new class extends Component
         $this->closeErrors = [];
     }
 
+    /**
+     * Pourquoi ce mois clôturé ne peut pas être rouvert, ou null s'il le peut (EF-34).
+     */
+    #[Computed]
+    public function reopenRefusal(): ?string
+    {
+        $period = $this->period;
+
+        return $period === null || ! $period->isClosed() ? null : app(ReopenBillingPeriod::class)->refusal($period);
+    }
+
+    public function reopen(): void
+    {
+        $this->authorize('update', $this->house);
+        $period = $this->period ?? abort(404);
+        $this->resetErrorBag('reopenReason');
+
+        try {
+            app(ReopenBillingPeriod::class)->execute($period, $this->reopenReason);
+        } catch (ReopenRefusedException $e) {
+            $this->addError('reopenReason', $e->getMessage());
+
+            return;
+        }
+
+        $this->reopening = false;
+        $this->reopenReason = '';
+        unset($this->period, $this->summary, $this->reopenRefusal);
+    }
+
     public function render(): mixed
     {
         return $this->view()->title('Résultat · '.Str::ucfirst(CarbonImmutable::createFromFormat('!Y-m', $this->mois)->locale('fr')->isoFormat('MMMM YYYY')));
@@ -101,6 +137,11 @@ new class extends Component
             <x-ui.badge class="mt-2" :tone="$summary->period->isClosed() ? 'success' : 'neutral'">
                 {{ $summary->period->isClosed() ? 'Clôturé le '.$summary->period->closed_at->timezone(config('app.timezone'))->format('d/m/Y') : 'Brouillon — calcul en direct' }}
             </x-ui.badge>
+            @if ($summary->period->reopened_at)
+                <p class="mt-2 text-xs text-sand-600">
+                    Rouvert le {{ $summary->period->reopened_at->timezone(config('app.timezone'))->format('d/m/Y') }} : {{ $summary->period->reopen_reason }}
+                </p>
+            @endif
         @endif
     </div>
 
@@ -208,6 +249,36 @@ new class extends Component
 
                 @if ($summary->creditRefunds > 0)
                     <p class="text-xs text-sand-600">Propriétaire — remboursement de crédit : {{ $fcfa($summary->creditRefunds) }}.</p>
+                @endif
+            </x-ui.card>
+        @endif
+
+        @if ($summary->period->isClosed())
+            <x-ui.card class="space-y-3">
+                <h2 class="text-base font-semibold text-sand-900">Corriger ce mois</h2>
+                @if ($this->reopenRefusal !== null)
+                    <p class="text-sm text-sand-600">{{ $this->reopenRefusal }}</p>
+                @elseif ($reopening)
+                    <form wire:submit="reopen" class="space-y-3">
+                        <p class="text-sm text-sand-700">
+                            Les montants figés de {{ $monthLabel }} seront effacés ; les relevés et les factures saisis restent.
+                            Après correction, clôturez à nouveau pour recalculer.
+                        </p>
+                        <div class="flex flex-col gap-1">
+                            <label for="reopen-reason" class="text-sm font-medium text-sand-800">Motif de la réouverture</label>
+                            <textarea id="reopen-reason" wire:model="reopenReason" rows="3" required
+                                class="block w-full rounded-[var(--radius)] border border-sand-300 bg-white text-base text-sand-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-300"
+                                placeholder="Par exemple : index de la Chambre 2 mal recopié"></textarea>
+                            @error('reopenReason') <p class="text-xs text-danger">{{ $message }}</p> @enderror
+                        </div>
+                        <div class="flex gap-2">
+                            <x-ui.button type="submit" variant="danger" size="sm">Rouvrir {{ $monthLabel }}</x-ui.button>
+                            <x-ui.button variant="outline" size="sm" wire:click="$set('reopening', false)">Annuler</x-ui.button>
+                        </div>
+                    </form>
+                @else
+                    <p class="text-sm text-sand-600">Une erreur de saisie ? Ce mois est le dernier clôturé : vous pouvez le rouvrir pour le corriger.</p>
+                    <x-ui.button variant="outline" size="sm" wire:click="$set('reopening', true)">Rouvrir ce mois</x-ui.button>
                 @endif
             </x-ui.card>
         @endif

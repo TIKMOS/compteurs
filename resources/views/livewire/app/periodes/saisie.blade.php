@@ -286,6 +286,13 @@ new class extends Component
         </div>
     </div>
 
+    @if (! $closed && $this->sheet->period?->reopened_at)
+        <div class="rounded-[var(--radius)] border border-warning-border bg-warning-bg px-3 py-2 text-sm text-sand-900" role="status">
+            Mois rouvert le {{ $this->sheet->period->reopened_at->timezone(config('app.timezone'))->format('d/m/Y') }} :
+            {{ $this->sheet->period->reopen_reason }}. Corrigez, puis clôturez à nouveau.
+        </div>
+    @endif
+
     <p class="text-sm text-sand-600">
         Chaque index est enregistré dès que vous quittez le champ : vous pouvez reprendre plus tard.
     </p>
