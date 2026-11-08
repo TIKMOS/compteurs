@@ -6,6 +6,7 @@ namespace App\Modules\Metering\Actions;
 
 use App\Models\Tenant;
 use App\Modules\Metering\Exceptions\OccupancyRejectedException;
+use App\Modules\Metering\Support\Journal;
 
 /**
  * Archive un locataire (UC-04) : refusé tant qu'il occupe un logement ; son historique
@@ -22,6 +23,7 @@ final class ArchiveTenant
             throw new OccupancyRejectedException("{$tenant->name} occupe encore un logement : enregistrez d'abord sa sortie.");
         }
 
+        Journal::record('archived', "Locataire {$tenant->name} archivé", $tenant);
         $tenant->delete();
     }
 }

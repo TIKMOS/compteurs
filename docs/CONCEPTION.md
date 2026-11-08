@@ -1602,5 +1602,7 @@ change le calcul d'un cas courant ou modifie fortement le schéma de base de don
 | H-55 | Payeur d'une tranche estimée, quand le relevé réel suivant révèle une surestimation ? | Retrouvé en rejouant le mois précédent avec les mêmes règles (EF-11) ; prix = prix appliqué figé de ce mois (D-20). Rien de plus n'est stocké. |
 | H-56 | Ordre des payeurs d'un même logement à l'écran ? | Chronologique : sortant, vacance, entrant (§ 5.3). Les logements suivent l'ordre naturel des libellés (H-5). |
 | H-57 | « Crédit restant » affiché sur un mois déjà clôturé ? | Crédit restant à ce jour (et non à la date du mois) ; le crédit déduit du mois, lui, est figé dans la participation. |
+| H-58 | Où consulter le journal d'activité (EF-35) ? | En lot 1, il est écrit (journal « compteurs », auteur, événement, valeurs utiles) mais pas encore affiché ; sa consultation viendra avec l'administration Filament et le tableau de bord du lot 2. |
+| H-59 | Texte des conditions d'utilisation (EF-51) ? | Rédaction de départ couvrant l'objet, la responsabilité SBEE / SONEB, l'exactitude des saisies, les données des locataires et la traçabilité ; **à faire relire par un juriste** avant la mise en production. |
 | H-41 | Jusqu'où peut-on programmer un changement de prix ? | Mois d'effet choisi parmi les 12 mois qui suivent le premier mois non clôturé. |
 | H-38 | Contenu de l'écart d'encaissement ? | Σ des participations des locataires du fluide − facture, **avant** les déductions de crédit à la sortie (affichées à part, ligne « Propriétaire — remboursement de crédit »). |

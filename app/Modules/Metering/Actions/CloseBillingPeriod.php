@@ -13,6 +13,7 @@ use App\Modules\Metering\Data\UtilityAllocation;
 use App\Modules\Metering\Exceptions\IncompletePeriodException;
 use App\Modules\Metering\Exceptions\PeriodClosedException;
 use App\Modules\Metering\Queries\ComputeBillingPeriod;
+use App\Modules\Metering\Support\Journal;
 use App\Shared\Enums\ChargeKind;
 use App\Shared\Enums\PeriodStatus;
 use App\Shared\Enums\Utility;
@@ -70,6 +71,19 @@ final class CloseBillingPeriod
                 'closed_at' => CarbonImmutable::now(),
                 'closed_by' => $by->id,
             ])->save();
+
+            $totals = [];
+            foreach ($computation->allocations as $utilityValue => $allocation) {
+                $totals[$utilityValue] = [
+                    'unit_price' => (string) $allocation->price?->applied,
+                    'price_source' => $allocation->price?->source->value,
+                    'participations' => $allocation->result->sum(),
+                ];
+            }
+            Journal::record('closed', 'Mois ' . ComputeBillingPeriod::of($period->label()) . ' clôturé', $period, [
+                'utilities' => $totals,
+                'credit_settlements' => count($computation->settlements),
+            ]);
 
             return $period;
         });

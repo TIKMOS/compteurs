@@ -7,6 +7,7 @@ namespace App\Modules\Metering\Actions;
 use App\Models\House;
 use App\Models\Unit;
 use App\Modules\Metering\Data\SubMeterInstallation;
+use App\Modules\Metering\Support\Journal;
 use App\Shared\Enums\Utility;
 use Illuminate\Support\Facades\DB;
 
@@ -31,6 +32,8 @@ final class CreateUnit
                     $this->installSubMeter->execute($unit, $utility, $installation);
                 }
             }
+
+            Journal::record('created', "Logement « {$unit->label} » ajouté à « {$house->name} »", $unit);
 
             return $unit->load('subMeters');
         });

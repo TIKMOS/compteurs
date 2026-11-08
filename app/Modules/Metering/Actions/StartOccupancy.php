@@ -10,6 +10,7 @@ use App\Models\Unit;
 use App\Modules\Metering\Exceptions\OccupancyRejectedException;
 use App\Modules\Metering\Exceptions\PeriodClosedException;
 use App\Modules\Metering\Exceptions\ReadingRejectedException;
+use App\Modules\Metering\Support\Journal;
 use App\Shared\Enums\ReadingKind;
 use App\Shared\Enums\Utility;
 use App\Shared\Support\Milli;
@@ -89,6 +90,13 @@ final class StartOccupancy
             }
 
             $unit->unsetRelation('occupancies');
+
+            Journal::record('entry', sprintf(
+                'Entrée de %s (%s) le %s',
+                $tenant->name,
+                $unit->label,
+                $startedOn->format('d/m/Y'),
+            ), $occupancy, ['indexes' => $indexes]);
 
             return $occupancy;
         });

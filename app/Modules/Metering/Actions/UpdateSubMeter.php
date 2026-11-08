@@ -6,6 +6,8 @@ namespace App\Modules\Metering\Actions;
 
 use App\Models\SubMeter;
 use App\Modules\Metering\Data\SubMeterInstallation;
+use App\Modules\Metering\Queries\ComputeBillingPeriod;
+use App\Modules\Metering\Support\Journal;
 use LogicException;
 
 /**
@@ -32,6 +34,12 @@ final class UpdateSubMeter
         }
 
         $meter->update($attributes);
+
+        Journal::record('updated', sprintf(
+            'Décompteur %s de « %s » corrigé',
+            ComputeBillingPeriod::of($meter->utility->label()),
+            $meter->unit()->withTrashed()->value('label'),
+        ), $meter, $attributes);
 
         return $meter;
     }

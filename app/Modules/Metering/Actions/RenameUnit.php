@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Metering\Actions;
 
 use App\Models\Unit;
+use App\Modules\Metering\Support\Journal;
 
 /**
  * Change le libellé d'un logement (UC-03). L'unicité dans la maison est validée par l'écran
@@ -14,7 +15,12 @@ final class RenameUnit
 {
     public function execute(Unit $unit, string $label): Unit
     {
+        $previous = $unit->label;
         $unit->update(['label' => trim($label)]);
+
+        if ($previous !== $unit->label) {
+            Journal::record('updated', "Logement « {$previous} » renommé « {$unit->label} »", $unit);
+        }
 
         return $unit;
     }

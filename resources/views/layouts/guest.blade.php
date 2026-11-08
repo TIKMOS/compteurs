@@ -26,7 +26,8 @@
             </div>
 
             <footer class="mt-6 text-xs text-sand-500 text-center">
-                © {{ date('Y') }} {{ config('app.name') }}
+                © {{ date('Y') }} {{ config('app.name') }} ·
+                <a href="{{ route('legal.terms') }}" class="hover:underline">Conditions d'utilisation</a>
             </footer>
         </div>
 

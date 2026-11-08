@@ -8,7 +8,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/maisons');
 
-Route::middleware(['auth', 'verified'])->group(function (): void {
+// EF-51 : conditions d'utilisation, publiques ; acceptation demandée avant tout accès (H-36).
+Route::view('/conditions-utilisation', 'pages.conditions-utilisation')->name('legal.terms');
+Route::livewire('/conditions-utilisation/accepter', 'app.legal.accepter')
+    ->middleware('auth')
+    ->name('legal.accept');
+
+Route::middleware(['auth', 'verified', 'terms'])->group(function (): void {
     // UC-02, UC-22 : maisons, compteurs principaux, mode de calcul (lot 1, tranche 1).
     Route::livewire('/maisons', 'app.maisons.index')->name('maisons.index');
     Route::livewire('/maisons/nouvelle', 'app.maisons.nouveau')->name('maisons.create');

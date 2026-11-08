@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Fortify;
 
+use App\Actions\AcceptTerms;
 use App\Models\User;
 use App\Shared\Support\BeninPhone;
 use Illuminate\Support\Facades\Hash;
@@ -40,16 +41,28 @@ final class CreateNewUser implements CreatesNewUsers
                     Rule::unique(User::class),
                 ],
                 'password' => $this->passwordRules(),
+                // EF-51 : case « J'accepte les conditions d'utilisation », non pré-cochée.
+                'terms' => ['accepted'],
             ],
-            ['phone.regex' => 'Saisissez un numéro béninois à 10 chiffres commençant par 01 (ex. 01 97 00 00 00).'],
+            [
+                'phone.regex' => 'Saisissez un numéro béninois à 10 chiffres commençant par 01 (ex. 01 97 00 00 00).',
+                'terms.accepted' => 'Pour créer votre compte, acceptez les conditions d\'utilisation.',
+            ],
         )->validate();
 
-        return User::create([
+        $user = User::create([
             'name' => $input['name'],
             // Minuscules : la connexion compare l'email en minuscules (FortifyServiceProvider).
             'email' => Str::lower($input['email']),
             'phone' => $phone,
             'password' => Hash::make($input['password']),
         ]);
+
+        $user->forceFill([
+            'terms_version' => AcceptTerms::currentVersion(),
+            'terms_accepted_at' => now(),
+        ])->save();
+
+        return $user;
     }
 }

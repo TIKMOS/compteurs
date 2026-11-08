@@ -47,7 +47,11 @@ final class DemoSeeder extends Seeder
                 'password' => Hash::make('password'),
             ],
         );
-        $owner->forceFill(['email_verified_at' => $owner->email_verified_at ?? now()])->save();
+        $owner->forceFill([
+            'email_verified_at' => $owner->email_verified_at ?? now(),
+            'terms_version' => config('legal.terms_version'),
+            'terms_accepted_at' => $owner->terms_accepted_at ?? now(),
+        ])->save();
 
         $house = House::withTrashed()->ownedBy($owner)->where('name', 'Cotonou Fidjrossè')->first()
             ?? $createHouse->execute(

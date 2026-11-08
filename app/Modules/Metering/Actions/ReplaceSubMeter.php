@@ -9,6 +9,8 @@ use App\Modules\Metering\Data\Reading;
 use App\Modules\Metering\Exceptions\OccupancyRejectedException;
 use App\Modules\Metering\Exceptions\PeriodClosedException;
 use App\Modules\Metering\Exceptions\ReadingRejectedException;
+use App\Modules\Metering\Queries\ComputeBillingPeriod;
+use App\Modules\Metering\Support\Journal;
 use App\Shared\Enums\ReadingKind;
 use App\Shared\Support\Milli;
 use Carbon\CarbonImmutable;
@@ -76,13 +78,24 @@ final class ReplaceSubMeter
             // Dépose d'abord : la clé « un seul décompteur actif » libère la place du nouveau.
             $old->forceFill(['removed_on' => $date, 'removal_index' => Milli::toDecimal($removal)])->save();
 
-            return $unit->subMeters()->create([
+            $new = $unit->subMeters()->create([
                 'utility' => $old->utility,
                 'serial_number' => filled($serialNumber) ? trim($serialNumber) : null,
                 'installed_on' => $date,
                 'install_index' => Milli::toDecimal(Milli::fromDecimal($installIndex)),
                 'replaces_sub_meter_id' => $old->id,
             ]);
+
+            Journal::record('replaced', sprintf(
+                'Décompteur %s de « %s » remplacé le %s : dépose à %s, pose à %s',
+                ComputeBillingPeriod::of($old->utility->label()),
+                $unit->label,
+                $date->format('d/m/Y'),
+                Milli::format($removal),
+                Milli::format(Milli::fromDecimal($installIndex)),
+            ), $new, ['old_sub_meter_id' => $old->id]);
+
+            return $new;
         });
     }
 }

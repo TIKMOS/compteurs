@@ -9,6 +9,7 @@ use App\Models\MeterReading;
 use App\Models\SubMeter;
 use App\Modules\Metering\Exceptions\PeriodClosedException;
 use App\Modules\Metering\Exceptions\ReadingRejectedException;
+use App\Modules\Metering\Support\Journal;
 use App\Shared\Enums\ReadingKind;
 use App\Shared\Support\Milli;
 use Illuminate\Support\Facades\DB;
@@ -57,8 +58,13 @@ final class RecordMonthEndReading
                 ->where('kind', ReadingKind::MonthEnd)
                 ->first();
 
+            $what = sprintf('%s (%s), fin %s', $meter->unit()->withTrashed()->value('label'), $meter->utility->label(), $period->label());
+
             if ($index === null) {
-                $existing?->delete();
+                if ($existing !== null) {
+                    Journal::record('reading_cleared', "Relevé effacé : {$what}", $existing, ['index' => $existing->index_value]);
+                    $existing->delete();
+                }
 
                 return null;
             }
@@ -72,18 +78,25 @@ final class RecordMonthEndReading
                 'estimation_basis' => null,
             ];
 
+            $previous = $existing?->index_value;
             if ($existing !== null) {
                 $existing->update($attributes);
-
-                return $existing;
+                $reading = $existing;
+            } else {
+                $reading = $meter->readings()->create([
+                    ...$attributes,
+                    'billing_period_id' => $period->id,
+                    'kind' => ReadingKind::MonthEnd,
+                    'read_on' => $period->monthEnd(),
+                ]);
             }
 
-            return $meter->readings()->create([
-                ...$attributes,
-                'billing_period_id' => $period->id,
-                'kind' => ReadingKind::MonthEnd,
-                'read_on' => $period->monthEnd(),
+            Journal::record('reading_recorded', "Relevé saisi : {$what} = " . Milli::format($milli), $reading, [
+                'index' => $reading->index_value,
+                'previous_index' => $previous,
             ]);
+
+            return $reading;
         });
     }
 }

@@ -8,6 +8,7 @@ use App\Models\House;
 use App\Models\User;
 use App\Modules\Metering\Data\PricingRule;
 use App\Modules\Metering\Exceptions\ComplianceAcknowledgementRequiredException;
+use App\Modules\Metering\Support\Journal;
 use App\Shared\Enums\Utility;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -75,6 +76,10 @@ final class CreateHouse
 
                 $this->acknowledgements->record($version, $rule->acknowledgementsRequiredFrom(null), $owner, $ipAddress);
             }
+
+            Journal::record('created', "Maison « {$house->name} » créée", $house, [
+                'modes' => array_map(fn (PricingRule $r) => $r->summary(''), $rules),
+            ]);
 
             return $house;
         });

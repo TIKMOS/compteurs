@@ -7,7 +7,10 @@ namespace App\Modules\Metering\Actions;
 use App\Models\BillingPeriod;
 use App\Models\UtilityBill;
 use App\Modules\Metering\Exceptions\PeriodClosedException;
+use App\Modules\Metering\Queries\ComputeBillingPeriod;
+use App\Modules\Metering\Support\Journal;
 use App\Shared\Enums\Utility;
+use App\Shared\Support\Milli;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -32,8 +35,13 @@ final class RecordUtilityBill
 
             $bill = $period->bills()->where('utility', $utility)->first();
 
+            $what = sprintf('Facture %s %s', ComputeBillingPeriod::of($utility->label()), ComputeBillingPeriod::of($period->label()));
+
             if ($totalAmount === null && $mainConsumption === null) {
-                $bill?->delete();
+                if ($bill !== null) {
+                    Journal::record('bill_cleared', "{$what} effacée", $bill, ['total_amount' => $bill->total_amount]);
+                    $bill->delete();
+                }
 
                 return null;
             }
@@ -44,13 +52,20 @@ final class RecordUtilityBill
                 'main_consumption' => $mainConsumption,
             ];
 
+            $previous = $bill?->total_amount;
             if ($bill !== null) {
                 $bill->update($attributes);
-
-                return $bill;
+            } else {
+                $bill = $period->bills()->create([...$attributes, 'utility' => $utility]);
             }
 
-            return $period->bills()->create([...$attributes, 'utility' => $utility]);
+            Journal::record('bill_recorded', $what . ' : ' . ($totalAmount === null ? 'montant non renseigné' : Milli::format($totalAmount * 1000) . ' FCFA'), $bill, [
+                'total_amount' => $totalAmount,
+                'previous_total_amount' => $previous,
+                'main_consumption' => $mainConsumption,
+            ]);
+
+            return $bill;
         });
     }
 }

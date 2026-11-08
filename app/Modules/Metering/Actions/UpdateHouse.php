@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Metering\Actions;
 
 use App\Models\House;
+use App\Modules\Metering\Support\Journal;
 use App\Shared\Enums\Utility;
 use Illuminate\Support\Facades\DB;
 
@@ -26,6 +27,11 @@ final class UpdateHouse
                 $reference = $providerReferences[$meter->utility->value] ?? null;
                 $meter->update(['provider_reference' => filled($reference) ? trim($reference) : null]);
             }
+
+            Journal::record('updated', "Maison « {$house->name} » modifiée", $house, [
+                'address' => $house->address,
+                'provider_references' => $providerReferences,
+            ]);
 
             return $house;
         });

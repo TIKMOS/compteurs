@@ -5,6 +5,13 @@ declare(strict_types=1);
 return [
 
     /*
+    | Version des conditions d'utilisation (EF-51, H-36). La changer quand le texte de
+    | resources/views/pages/conditions-utilisation.blade.php change : chaque propriétaire
+    | devra accepter la nouvelle version à sa prochaine connexion.
+    */
+    'terms_version' => '2026-11-08',
+
+    /*
     | Avertissement de conformité (EF-48, D-21). Texte affiché à l'activation du mode 2
     | et à chaque désactivation du plafond ; il est recopié tel quel dans chaque
     | confirmation enregistrée (compliance_acknowledgements.notice_text).

@@ -10,6 +10,8 @@ use App\Models\UtilityPricing;
 use App\Modules\Metering\Data\PricingRule;
 use App\Modules\Metering\Exceptions\ComplianceAcknowledgementRequiredException;
 use App\Modules\Metering\Exceptions\PricingEffectiveDateException;
+use App\Modules\Metering\Queries\ComputeBillingPeriod;
+use App\Modules\Metering\Support\Journal;
 use App\Shared\Enums\Utility;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -87,6 +89,20 @@ final class ChangeUtilityPricing
 
             $this->acknowledgements->record($version, $kinds, $by, $ipAddress);
             $house->unsetRelation('pricings');
+
+            Journal::record('pricing_changed', sprintf(
+                'Calcul %s : %s, à partir de %s',
+                ComputeBillingPeriod::of($utility->label()),
+                $rule->summary($utility->unit()),
+                $effectiveFrom->locale('fr')->isoFormat('MMMM YYYY'),
+            ), $version, [
+                'utility' => $utility->value,
+                'mode' => $rule->mode->value,
+                'fixed_unit_price' => $rule->fixedUnitPrice,
+                'cap_to_actual' => $rule->capToActual,
+                'effective_from' => $effectiveFrom->toDateString(),
+                'compliance_confirmations' => array_map(fn ($k) => $k->value, $kinds),
+            ]);
 
             return $version;
         });

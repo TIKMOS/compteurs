@@ -8,6 +8,8 @@ use App\Models\SubMeter;
 use App\Models\Unit;
 use App\Modules\Metering\Data\SubMeterInstallation;
 use App\Modules\Metering\Exceptions\ActiveSubMeterExistsException;
+use App\Modules\Metering\Queries\ComputeBillingPeriod;
+use App\Modules\Metering\Support\Journal;
 use App\Shared\Enums\Utility;
 use Illuminate\Support\Facades\DB;
 
@@ -35,6 +37,14 @@ final class InstallSubMeter
                 'install_index' => $installation->installIndex,
             ]);
             $unit->unsetRelation('subMeters');
+
+            Journal::record('installed', sprintf(
+                'Décompteur %s posé sur « %s » le %s, index %s',
+                ComputeBillingPeriod::of($utility->label()),
+                $unit->label,
+                $installation->installedOn->format('d/m/Y'),
+                SubMeter::formatIndex($installation->installIndex),
+            ), $meter);
 
             return $meter;
         });

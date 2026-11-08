@@ -13,6 +13,7 @@ use App\Modules\Metering\Exceptions\EstimationImpossibleException;
 use App\Modules\Metering\Exceptions\PeriodClosedException;
 use App\Modules\Metering\Exceptions\ReadingRejectedException;
 use App\Modules\Metering\Services\ReadingEstimator;
+use App\Modules\Metering\Support\Journal;
 use App\Shared\Enums\ReadingKind;
 use App\Shared\Support\Milli;
 use Illuminate\Support\Facades\DB;
@@ -69,16 +70,26 @@ final class EstimateMeterReading
 
             if ($existing !== null) {
                 $existing->update($attributes);
-
-                return $existing;
+                $reading = $existing;
+            } else {
+                $reading = $meter->readings()->create([
+                    ...$attributes,
+                    'billing_period_id' => $period->id,
+                    'kind' => ReadingKind::MonthEnd,
+                    'read_on' => $monthEnd,
+                ]);
             }
 
-            return $meter->readings()->create([
-                ...$attributes,
-                'billing_period_id' => $period->id,
-                'kind' => ReadingKind::MonthEnd,
-                'read_on' => $monthEnd,
-            ]);
+            Journal::record('estimated', sprintf(
+                'Relevé estimé : %s (%s), fin %s = %s (%s)',
+                $meter->unit()->withTrashed()->value('label'),
+                $meter->utility->label(),
+                $period->label(),
+                Milli::format($estimated),
+                $attributes['estimation_basis'],
+            ), $reading, ['index' => $reading->index_value, 'history' => $history]);
+
+            return $reading;
         });
     }
 }

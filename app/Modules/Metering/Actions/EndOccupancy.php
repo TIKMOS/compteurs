@@ -9,6 +9,7 @@ use App\Models\Unit;
 use App\Modules\Metering\Exceptions\OccupancyRejectedException;
 use App\Modules\Metering\Exceptions\PeriodClosedException;
 use App\Modules\Metering\Exceptions\ReadingRejectedException;
+use App\Modules\Metering\Support\Journal;
 use App\Shared\Enums\ReadingKind;
 use App\Shared\Enums\Utility;
 use App\Shared\Support\Milli;
@@ -89,6 +90,13 @@ final class EndOccupancy
                     'index_value' => Milli::toDecimal($index),
                 ]);
             }
+
+            Journal::record('exit', sprintf(
+                'Sortie de %s (%s) le %s',
+                $occupancy->tenant->name,
+                $unit->label,
+                $endedOn->format('d/m/Y'),
+            ), $occupancy, ['indexes' => $indexes]);
 
             return $occupancy;
         });

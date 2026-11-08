@@ -51,6 +51,10 @@
             {{ $slot }}
         </main>
 
+        <footer class="mx-auto max-w-3xl px-4 pb-8 text-xs text-sand-500">
+            <a href="{{ route('legal.terms') }}" class="hover:underline">Conditions d'utilisation</a>
+        </footer>
+
         @livewireScriptConfig
     </body>
 </html>

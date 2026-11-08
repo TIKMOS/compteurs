@@ -6,6 +6,7 @@ namespace App\Modules\Metering\Actions;
 
 use App\Models\Tenant;
 use App\Models\User;
+use App\Modules\Metering\Support\Journal;
 use App\Shared\Support\BeninPhone;
 
 /**
@@ -25,11 +26,13 @@ final class SaveTenant
             $tenant = new Tenant($attributes);
             $tenant->owner()->associate($owner);
             $tenant->save();
+            Journal::record('created', "Locataire {$tenant->name} ajouté", $tenant);
 
             return $tenant;
         }
 
         $tenant->update($attributes);
+        Journal::record('updated', "Locataire {$tenant->name} modifié", $tenant, ['phone' => $tenant->phone]);
 
         return $tenant;
     }

@@ -59,6 +59,7 @@ test('inscription : email en minuscules, téléphone normalisé, email à vérif
         'phone' => '97 00 00 01',
         'password' => 'motdepasse-solide',
         'password_confirmation' => 'motdepasse-solide',
+        'terms' => '1',
     ])->assertRedirect('/maisons');
 
     $user = User::query()->sole();

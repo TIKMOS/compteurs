@@ -6,6 +6,7 @@ namespace App\Modules\Metering\Actions;
 
 use App\Models\Unit;
 use App\Modules\Metering\Exceptions\OccupancyRejectedException;
+use App\Modules\Metering\Support\Journal;
 
 /**
  * Archive un logement (UC-03) : il disparaît de la maison, ses décompteurs et leur
@@ -22,6 +23,7 @@ final class ArchiveUnit
             throw new OccupancyRejectedException("{$unit->label} est occupé : enregistrez d'abord la sortie du locataire.");
         }
 
+        Journal::record('archived', "Logement « {$unit->label} » archivé", $unit);
         $unit->delete();
     }
 }
