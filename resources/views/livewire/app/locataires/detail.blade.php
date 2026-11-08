@@ -83,6 +83,15 @@ new class extends Component
         $this->redirectRoute('locataires.index', navigate: true);
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
+    #[\Livewire\Attributes\Computed]
+    public function history(): array
+    {
+        return app(\App\Modules\Metering\Queries\ConsumptionHistory::class)->forTenant($this->tenant);
+    }
+
     public function render(): mixed
     {
         return $this->view()->title($this->tenant->name);
@@ -192,6 +201,8 @@ new class extends Component
             <p class="text-sm text-sand-600">Aucun logement : enregistrez son entrée depuis la fiche d'un logement vacant.</p>
         @endforelse
     </x-ui.card>
+
+    <x-consumption-history :rows="$this->history" />
 
     <div class="pt-2">
         <button type="button" class="px-1 text-sm font-medium text-danger hover:underline" wire:click="archive"

@@ -129,6 +129,15 @@ new class extends Component
         $this->redirectRoute('maisons.show', $this->house, navigate: true);
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
+    #[\Livewire\Attributes\Computed]
+    public function history(): array
+    {
+        return app(\App\Modules\Metering\Queries\ConsumptionHistory::class)->forUnit($this->unit);
+    }
+
     public function render(): mixed
     {
         return $this->view()->title($this->unit->label.' · '.$this->house->name);
@@ -261,6 +270,8 @@ new class extends Component
             @endif
         </x-ui.card>
     @endforeach
+
+    <x-consumption-history :rows="$this->history" />
 
     <div class="pt-2">
         <button
