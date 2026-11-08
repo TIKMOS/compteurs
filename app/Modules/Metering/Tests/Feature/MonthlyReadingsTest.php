@@ -278,7 +278,7 @@ test('la fiche de la maison mène à la saisie du mois en cours et liste les moi
     sheet('2026-10')->set('indexes.' . $this->elec->id, '1392');
 
     $this->get(route('maisons.show', $this->house))
-        ->assertSeeText('Saisir décembre 2026')
+        ->assertSeeText('Saisir décembre')
         ->assertSeeText('Octobre 2026')
         ->assertSeeText('Brouillon');
 });

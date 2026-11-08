@@ -64,9 +64,14 @@ new class extends Component
 
     <x-ui.card class="space-y-3">
         <h2 class="text-base font-semibold text-sand-900">Relevés et factures</h2>
-        <x-ui.button as="a" href="{{ route('periodes.show', [$house, $currentMonth->format('Y-m')]) }}" wire:navigate class="w-full">
-            Saisir {{ $currentMonth->locale('fr')->isoFormat('MMMM YYYY') }}
-        </x-ui.button>
+        <div class="grid grid-cols-2 gap-2">
+            <x-ui.button as="a" href="{{ route('periodes.show', [$house, $currentMonth->format('Y-m')]) }}" wire:navigate>
+                Saisir {{ $currentMonth->locale('fr')->isoFormat('MMMM') }}
+            </x-ui.button>
+            <x-ui.button as="a" href="{{ route('paiements.index', $house) }}" wire:navigate variant="outline">
+                Paiements
+            </x-ui.button>
+        </div>
 
         @if ($periods->isNotEmpty())
             <ul class="divide-y divide-sand-200">

@@ -54,6 +54,14 @@ final class BillingPeriod extends Model
     }
 
     /**
+     * @return HasMany<Payment, $this>
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
      * @return HasMany<CreditSettlement, $this>
      */
     public function creditSettlements(): HasMany

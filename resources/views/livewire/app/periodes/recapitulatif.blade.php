@@ -271,6 +271,15 @@ new class extends Component
                             $statement = $this->statements[$tenant['occupancyId']] ?? null;
                         @endphp
                         @if ($statement)
+                            @php
+                                $occ = $statement->occupancy;
+                                $paid = \App\Modules\Metering\Queries\TenantBalance::paid($occ, $summary->period);
+                                $left = \App\Modules\Metering\Queries\TenantBalance::due($occ, $summary->period) - $paid;
+                            @endphp
+                            <p class="mt-2 text-xs {{ $left > 0 ? 'text-warning' : 'text-success' }}">
+                                Payé {{ $fcfa($paid) }} · {{ $left > 0 ? 'reste '.$fcfa($left) : 'à jour' }}
+                                · <a href="{{ route('paiements.index', $house) }}" wire:navigate class="underline">Paiements</a>
+                            </p>
                             {{-- EF-37 : partage en un clic. --}}
                             <div class="mt-3 grid grid-cols-3 gap-2">
                                 <x-ui.button as="a" href="{{ $statement->whatsappUrl() }}" target="_blank" rel="noopener" variant="outline" size="sm">WhatsApp</x-ui.button>

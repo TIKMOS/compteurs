@@ -52,6 +52,9 @@ Route::middleware(['auth', 'verified', 'terms'])->group(function (): void {
         ->name('periodes.statement')
         ->where(['mois' => '\d{4}-\d{2}', 'occupancy' => '\d+']);
 
+    // UC-18 : paiements, impayés, remboursements de crédit (lot 2, tranche 3).
+    Route::livewire('/maisons/{house}/paiements', 'app.paiements.index')->name('paiements.index');
+
     Route::livewire('/locataires', 'app.locataires.index')->name('locataires.index');
     Route::livewire('/locataires/nouveau', 'app.locataires.nouveau')->name('locataires.create');
     Route::livewire('/locataires/{tenant}', 'app.locataires.detail')->name('locataires.show');

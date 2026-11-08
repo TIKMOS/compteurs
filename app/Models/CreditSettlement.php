@@ -31,6 +31,14 @@ final class CreditSettlement extends Model
         return $this->belongsTo(Occupancy::class);
     }
 
+    /**
+     * @return BelongsTo<BillingPeriod, $this>
+     */
+    public function billingPeriod(): BelongsTo
+    {
+        return $this->belongsTo(BillingPeriod::class);
+    }
+
     public function netDue(): int
     {
         return $this->statement_total - $this->deducted_amount;
