@@ -12,6 +12,8 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
+    // Commandes des modules (app/Modules/*/Console).
+    ->withCommands([__DIR__ . '/../app/Modules/Metering/Console'])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'terms' => App\Http\Middleware\EnsureTermsAccepted::class,
