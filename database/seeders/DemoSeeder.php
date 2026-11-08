@@ -9,9 +9,13 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Modules\Metering\Actions\CreateHouse;
 use App\Modules\Metering\Actions\CreateUnit;
+use App\Modules\Metering\Actions\OpenBillingPeriod;
+use App\Modules\Metering\Actions\RecordMonthEndReading;
+use App\Modules\Metering\Actions\RecordUtilityBill;
 use App\Modules\Metering\Actions\StartOccupancy;
 use App\Modules\Metering\Data\PricingRule;
 use App\Modules\Metering\Data\SubMeterInstallation;
+use App\Shared\Enums\Utility;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -20,8 +24,8 @@ use Illuminate\Support\Facades\Hash;
  * Données de démonstration, rejouables sans doublon : un propriétaire et la maison
  * « Cotonou Fidjrossè » de CONCEPTION.md § 5.
  *
- * 4 logements et leurs décompteurs (tranche 2), 4 locataires (tranche 3). À compléter :
- * 3 mois de relevés et de factures (tranche 4).
+ * 4 logements et leurs décompteurs (tranche 2), 4 locataires (tranche 3), 3 mois de relevés
+ * et de factures, août à octobre 2026 (tranche 4).
  *
  *   php artisan db:seed --class=DemoSeeder
  *   Connexion : demo@compteurs.test (ou 01 97 00 00 00) / password
@@ -53,6 +57,46 @@ final class DemoSeeder extends Seeder
 
         $this->seedUnits($house);
         $this->seedOccupancies($owner, $house);
+        $this->seedMonths($house);
+    }
+
+    /**
+     * Index de fin de mois et factures d'août à octobre 2026 (les mois restent en brouillon ;
+     * la clôture vient avec le calcul). Octobre reprend les index de CONCEPTION.md § 5.2.
+     */
+    private function seedMonths(House $house): void
+    {
+        $indexes = [
+            '2026-08' => ['Chambre 1' => [1116, 402], 'Chambre 2' => [3382, 181], 'Chambre 3' => [492, 946], 'Boutique' => [5040, null]],
+            '2026-09' => ['Chambre 1' => [1250, 412], 'Chambre 2' => [3480, 188], 'Chambre 3' => [702, 960], 'Boutique' => [5090, null]],
+            '2026-10' => ['Chambre 1' => [1392, 421], 'Chambre 2' => [3578, 195], 'Chambre 3' => [917, 974], 'Boutique' => [5150, null]],
+        ];
+        $bills = [
+            '2026-08' => [64200, 17900, null],
+            '2026-09' => [63900, 18800, null],
+            '2026-10' => [70000, 18505, '540'],
+        ];
+
+        foreach ($indexes as $month => $units) {
+            $period = app(OpenBillingPeriod::class)->execute($house, CarbonImmutable::parse($month . '-01'));
+
+            foreach ($units as $label => [$electricity, $water]) {
+                $unit = $house->units()->with('subMeters')->where('label', $label)->first();
+                foreach (['electricity' => $electricity, 'water' => $water] as $utility => $index) {
+                    $meter = $unit?->activeSubMeter(Utility::from($utility));
+                    if ($meter === null || $index === null || $meter->readings()->where('billing_period_id', $period->id)->where('kind', 'month_end')->exists()) {
+                        continue;
+                    }
+                    app(RecordMonthEndReading::class)->execute($period, $meter, $index . '.000');
+                }
+            }
+
+            [$electricityBill, $waterBill, $mainConsumption] = $bills[$month];
+            if (! $period->bills()->exists()) {
+                app(RecordUtilityBill::class)->execute($period, Utility::Electricity, $electricityBill, $mainConsumption === null ? null : $mainConsumption . '.000');
+                app(RecordUtilityBill::class)->execute($period, Utility::Water, $waterBill, null);
+            }
+        }
     }
 
     /**

@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Shared\Casts\DateOnly;
 use App\Shared\Concerns\HasUlid;
 use App\Shared\Enums\PeriodStatus;
+use App\Shared\Enums\Utility;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -42,6 +43,27 @@ final class BillingPeriod extends Model
     public function readings(): HasMany
     {
         return $this->hasMany(MeterReading::class);
+    }
+
+    /**
+     * @return HasMany<UtilityBill, $this>
+     */
+    public function bills(): HasMany
+    {
+        return $this->hasMany(UtilityBill::class);
+    }
+
+    public function bill(Utility $utility): ?UtilityBill
+    {
+        return $this->bills->firstWhere('utility', $utility);
+    }
+
+    /**
+     * Dernier jour du mois : date des relevés de fin de mois (H-49).
+     */
+    public function monthEnd(): CarbonImmutable
+    {
+        return $this->month->endOfMonth()->startOfDay();
     }
 
     public function isClosed(): bool

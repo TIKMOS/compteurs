@@ -25,7 +25,7 @@ final class AssertReadingFitsChain
     /**
      * @throws ReadingRejectedException
      */
-    public function assert(SubMeter $meter, ReadingKind $kind, CarbonImmutable $readOn, int $index): void
+    public function assert(SubMeter $meter, ReadingKind $kind, CarbonImmutable $readOn, int $index, ?int $ignoreReadingId = null): void
     {
         $utility = $meter->utility;
 
@@ -42,7 +42,8 @@ final class AssertReadingFitsChain
         $next = null;
         $lastReal = 0;
 
-        foreach ($meter->readingChain() as $reading) {
+        // Le relevé corrigé lui-même ne compte pas (ex. index de fin de mois ressaisi).
+        foreach ($meter->readingChain($ignoreReadingId) as $reading) {
             if (strcmp($reading->sortKey(), $new->sortKey()) <= 0) {
                 $previous = $reading;
                 if (! $reading->isEstimated) {

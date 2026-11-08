@@ -57,6 +57,32 @@ new class extends Component
         @endif
     </div>
 
+    @php
+        $currentMonth = now()->startOfMonth();
+        $periods = $house->billingPeriods()->orderByDesc('month')->get();
+    @endphp
+
+    <x-ui.card class="space-y-3">
+        <h2 class="text-base font-semibold text-sand-900">Relevés et factures</h2>
+        <x-ui.button as="a" href="{{ route('periodes.show', [$house, $currentMonth->format('Y-m')]) }}" wire:navigate class="w-full">
+            Saisir {{ $currentMonth->locale('fr')->isoFormat('MMMM YYYY') }}
+        </x-ui.button>
+
+        @if ($periods->isNotEmpty())
+            <ul class="divide-y divide-sand-200">
+                @foreach ($periods as $period)
+                    <li wire:key="period-{{ $period->id }}">
+                        <a href="{{ route('periodes.show', [$house, $period->month->format('Y-m')]) }}" wire:navigate
+                            class="flex items-center justify-between py-2.5 text-sm hover:text-primary-700">
+                            <span class="text-sand-900">{{ \Illuminate\Support\Str::ucfirst($period->label()) }}</span>
+                            <x-ui.badge :tone="$period->isClosed() ? 'success' : 'neutral'" size="sm">{{ $period->isClosed() ? 'Clôturé' : 'Brouillon' }}</x-ui.badge>
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+    </x-ui.card>
+
     <x-ui.card class="space-y-4">
         <div class="flex items-center justify-between gap-3">
             <h2 class="text-base font-semibold text-sand-900">Calcul des participations</h2>

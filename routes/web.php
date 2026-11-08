@@ -31,6 +31,11 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->name('logements.exit')
         ->scopeBindings();
 
+    // UC-07 à UC-12 : saisie d'un mois, relevés, remplacement, factures (tranche 4).
+    Route::livewire('/maisons/{house}/periodes/{mois}', 'app.periodes.saisie')
+        ->name('periodes.show')
+        ->where('mois', '\d{4}-\d{2}');
+
     Route::livewire('/locataires', 'app.locataires.index')->name('locataires.index');
     Route::livewire('/locataires/nouveau', 'app.locataires.nouveau')->name('locataires.create');
     Route::livewire('/locataires/{tenant}', 'app.locataires.detail')->name('locataires.show');

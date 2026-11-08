@@ -54,6 +54,18 @@ final class SubMeter extends Model
     }
 
     /**
+     * Le décompteur doit-il avoir un relevé de fin de mois pour cette période (EF-31) ?
+     * Oui s'il est posé au plus tard le dernier jour du mois et n'a pas été déposé avant.
+     */
+    public function needsMonthEndReading(BillingPeriod|CarbonImmutable $month): bool
+    {
+        $monthEnd = $month instanceof BillingPeriod ? $month->monthEnd() : $month->endOfMonth()->startOfDay();
+
+        return $this->installed_on->lessThanOrEqualTo($monthEnd)
+            && ($this->removed_on === null || $this->removed_on->isAfter($monthEnd));
+    }
+
+    /**
      * @return HasMany<MeterReading, $this>
      */
     public function readings(): HasMany
@@ -74,11 +86,13 @@ final class SubMeter extends Model
      *
      * @return list<Reading>
      */
-    public function readingChain(): array
+    public function readingChain(?int $exceptReadingId = null): array
     {
         $chain = [new Reading(ReadingKind::Installation, $this->installed_on, Milli::fromDecimal($this->install_index))];
 
-        foreach ($this->readings()->get() as $reading) {
+        $readings = $this->readings()->when($exceptReadingId !== null, fn ($q) => $q->whereKeyNot($exceptReadingId))->get();
+
+        foreach ($readings as $reading) {
             $chain[] = $reading->toReading();
         }
 

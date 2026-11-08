@@ -7,16 +7,21 @@ namespace App\Providers;
 use App\Models\House;
 use App\Models\Tenant;
 use App\Models\Unit;
+use App\Modules\Metering\Contracts\BilledConsumptionHistory;
 use App\Modules\Metering\Policies\HousePolicy;
 use App\Modules\Metering\Policies\TenantPolicy;
 use App\Modules\Metering\Policies\UnitPolicy;
+use App\Modules\Metering\Services\ClosedPeriodConsumptionHistory;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Number;
 use Illuminate\Support\ServiceProvider;
 
 final class AppServiceProvider extends ServiceProvider
 {
-    public function register(): void {}
+    public function register(): void
+    {
+        $this->app->bind(BilledConsumptionHistory::class, ClosedPeriodConsumptionHistory::class);
+    }
 
     public function boot(): void
     {
