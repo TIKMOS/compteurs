@@ -15,4 +15,11 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::livewire('/maisons/{house}', 'app.maisons.detail')->name('maisons.show');
     Route::livewire('/maisons/{house}/modifier', 'app.maisons.modifier')->name('maisons.edit');
     Route::livewire('/maisons/{house}/parametres', 'app.maisons.parametres')->name('maisons.settings');
+
+    // UC-03 : logements et décompteurs (tranche 2). scopeBindings : un logement n'est trouvé
+    // que dans sa propre maison.
+    Route::livewire('/maisons/{house}/logements/nouveau', 'app.logements.nouveau')->name('logements.create');
+    Route::livewire('/maisons/{house}/logements/{unit}', 'app.logements.detail')
+        ->name('logements.show')
+        ->scopeBindings();
 });

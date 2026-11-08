@@ -1,13 +1,15 @@
 <?php
 
 use App\Models\House;
+use App\Models\Unit;
 use App\Modules\Metering\Actions\ArchiveHouse;
+use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /*
- * UC-02 : fiche d'une maison — compteurs principaux, mode de calcul de chaque fluide, archivage.
- * Les logements arrivent avec la tranche 2 (UC-03).
+ * UC-02, UC-03 : fiche d'une maison — mode de calcul de chaque fluide, compteurs principaux,
+ * logements (ordre naturel des libellés, H-5), archivage.
  */
 new class extends Component
 {
@@ -18,6 +20,14 @@ new class extends Component
     {
         $this->authorize('view', $house);
         $this->house = $house->load(['mainMeters', 'pricings']);
+    }
+
+    /**
+     * @return Collection<int, Unit>
+     */
+    public function units(): Collection
+    {
+        return Unit::sortNaturally($this->house->units()->with('subMeters')->get());
     }
 
     public function archive(): void
@@ -81,9 +91,34 @@ new class extends Component
         </dl>
     </x-ui.card>
 
-    <x-ui.card>
-        <h2 class="text-base font-semibold text-sand-900">Logements</h2>
-        <p class="mt-1 text-sm text-sand-600">La gestion des logements et de leurs décompteurs arrive à l'étape suivante.</p>
+    <x-ui.card class="space-y-3">
+        <div class="flex items-center justify-between gap-3">
+            <h2 class="text-base font-semibold text-sand-900">Logements</h2>
+            <a href="{{ route('logements.create', $house) }}" wire:navigate class="text-sm font-medium text-primary-700 hover:underline">+ Ajouter</a>
+        </div>
+
+        @forelse ($this->units() as $unit)
+            <a href="{{ route('logements.show', [$house, $unit]) }}" wire:navigate wire:key="unit-{{ $unit->ulid }}"
+                class="flex items-center justify-between gap-3 rounded-[var(--radius)] border border-sand-200 p-3 hover:border-primary-300">
+                <div class="min-w-0">
+                    <p class="font-medium text-sand-900 truncate">{{ $unit->label }}</p>
+                    <div class="mt-1 flex flex-wrap gap-1.5">
+                        @foreach (\App\Shared\Enums\Utility::cases() as $utility)
+                            @if ($unit->activeSubMeter($utility))
+                                <x-ui.badge tone="primary" size="sm">{{ \Illuminate\Support\Str::ucfirst($utility->label()) }}</x-ui.badge>
+                            @else
+                                <x-ui.badge tone="neutral" size="sm">Pas de décompteur d'{{ $utility->label() }}</x-ui.badge>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+                <span class="text-sand-400" aria-hidden="true">›</span>
+            </a>
+        @empty
+            <p class="text-sm text-sand-600">
+                Aucun logement. Ajoutez chaque chambre, appartement ou boutique qui a son propre décompteur.
+            </p>
+        @endforelse
     </x-ui.card>
 
     <div class="pt-2">

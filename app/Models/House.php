@@ -53,6 +53,14 @@ final class House extends Model
     }
 
     /**
+     * @return HasMany<Unit, $this>
+     */
+    public function units(): HasMany
+    {
+        return $this->hasMany(Unit::class);
+    }
+
+    /**
      * @return HasMany<UtilityPricing, $this>
      */
     public function pricings(): HasMany
