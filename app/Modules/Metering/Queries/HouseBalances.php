@@ -10,6 +10,7 @@ use App\Models\CreditSettlement;
 use App\Models\House;
 use App\Models\Occupancy;
 use App\Models\Payment;
+use App\Shared\Enums\PaymentStatus;
 use App\Shared\Enums\PeriodStatus;
 
 /**
@@ -67,6 +68,7 @@ final class HouseBalances
                 'due' => $amount,
                 'paid' => $paid,
                 'remaining' => $amount - $paid,
+                'status' => PaymentStatus::for($amount, $paid),
                 'payments' => $monthPayments,
             ];
             $tenants[$occupancyId]['remaining'] += $amount - $paid;
@@ -88,8 +90,21 @@ final class HouseBalances
             ->values()
             ->all();
 
+        // Liste des impayés de la maison : répartitions partielles ou impayées, plus récentes d'abord.
+        $unpaid = [];
+        foreach ($tenants as $tenant) {
+            foreach ($tenant['months'] as $month) {
+                if ($month['status'] !== PaymentStatus::Paid) {
+                    $unpaid[] = ['occupancy' => $tenant['occupancy'], ...$month];
+                }
+            }
+        }
+        usort($unpaid, fn (array $a, array $b): int => $b['period']->month <=> $a['period']->month
+            ?: strnatcasecmp($a['occupancy']->unit->label, $b['occupancy']->unit->label));
+
         return [
             'tenants' => array_values($tenants),
+            'unpaid' => $unpaid,
             'totalRemaining' => array_sum(array_map(fn (array $t): int => max(0, $t['remaining']), $tenants)),
             'refunds' => $refunds,
             'totalRefunds' => array_sum(array_map(fn (CreditSettlement $s): int => $s->refund_due, $refunds)),

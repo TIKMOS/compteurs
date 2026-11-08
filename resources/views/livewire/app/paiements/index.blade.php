@@ -80,7 +80,7 @@ new class extends Component
 
         $this->validate([
             'paidOn' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
-            'method' => ['required', Rule::enum(PaymentMethod::class)],
+            'method' => ['required', Rule::in(array_map(fn (PaymentMethod $m) => $m->value, PaymentMethod::selectable()))],
             'note' => ['nullable', 'string', 'max:255'],
         ], ['paidOn.before_or_equal' => 'La date du paiement ne peut pas être dans le futur.'], ['paidOn' => 'date', 'method' => 'moyen de paiement']);
 
@@ -186,6 +186,27 @@ new class extends Component
         </x-ui.card>
     @endif
 
+    {{-- Liste des impayés de la maison : statut partiel ou impayé. --}}
+    <x-ui.card class="space-y-3">
+        <h2 class="text-base font-semibold text-sand-900">Impayés</h2>
+        @forelse ($b['unpaid'] as $row)
+            <div class="flex items-center justify-between gap-3 text-sm" wire:key="unpaid-{{ $row['occupancy']->id }}-{{ $row['period']->id }}">
+                <div class="min-w-0">
+                    <p class="font-medium text-sand-900 truncate">{{ $row['occupancy']->unit->label }} — {{ $row['occupancy']->tenant->name }}</p>
+                    <p class="text-xs text-sand-600">
+                        {{ \Illuminate\Support\Str::ucfirst($row['period']->label()) }} · reste {{ $fcfa($row['remaining']) }}
+                        @if ($row['paid'] > 0) (reçu {{ $fcfa($row['paid']) }}) @endif
+                    </p>
+                </div>
+                <x-ui.badge :tone="$row['status']->tone()" size="sm">{{ $row['status']->label() }}</x-ui.badge>
+            </div>
+        @empty
+            <p class="text-sm text-success" role="status">Aucun impayé : toutes les répartitions clôturées sont payées.</p>
+        @endforelse
+    </x-ui.card>
+
+    <h2 class="pt-2 text-base font-semibold text-sand-900">Détail par locataire</h2>
+
     @forelse ($b['tenants'] as $t)
         @php
             $occupancy = $t['occupancy'];
@@ -212,7 +233,8 @@ new class extends Component
                         <div class="flex items-center justify-between gap-3 text-sm">
                             <div>
                                 <p class="font-medium text-sand-900">{{ \Illuminate\Support\Str::ucfirst($m['period']->label()) }}</p>
-                                <p class="text-xs text-sand-600">Dû {{ $fcfa($m['due']) }} · payé {{ $fcfa($m['paid']) }}</p>
+                                <p class="text-xs text-sand-600">Dû {{ $fcfa($m['due']) }} · reçu {{ $fcfa($m['paid']) }}</p>
+                                <x-ui.badge :tone="$m['status']->tone()" size="sm" class="mt-1">{{ $m['status']->label() }}</x-ui.badge>
                             </div>
                             @if ($m['remaining'] > 0)
                                 @if ($paying !== $rowKey)
@@ -221,7 +243,6 @@ new class extends Component
                                     </x-ui.button>
                                 @endif
                             @else
-                                <span class="text-xs font-medium text-success">Payé</span>
                             @endif
                         </div>
 
@@ -239,7 +260,7 @@ new class extends Component
                                 <div class="flex flex-col gap-1">
                                     <label for="method" class="text-sm font-medium text-sand-800">Moyen de paiement</label>
                                     <select id="method" wire:model="method" class="block w-full h-11 rounded-[var(--radius)] border border-sand-300 bg-white text-base">
-                                        @foreach (\App\Shared\Enums\PaymentMethod::cases() as $pm)
+                                        @foreach (\App\Shared\Enums\PaymentMethod::selectable() as $pm)
                                             <option value="{{ $pm->value }}">{{ $pm->label() }}</option>
                                         @endforeach
                                     </select>

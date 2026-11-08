@@ -276,8 +276,12 @@ new class extends Component
                                 $paid = \App\Modules\Metering\Queries\TenantBalance::paid($occ, $summary->period);
                                 $left = \App\Modules\Metering\Queries\TenantBalance::due($occ, $summary->period) - $paid;
                             @endphp
-                            <p class="mt-2 text-xs {{ $left > 0 ? 'text-warning' : 'text-success' }}">
-                                Payé {{ $fcfa($paid) }} · {{ $left > 0 ? 'reste '.$fcfa($left) : 'à jour' }}
+                            @php
+                                $payStatus = \App\Shared\Enums\PaymentStatus::for($paid + $left, $paid);
+                            @endphp
+                            <p class="mt-2 flex flex-wrap items-center gap-2 text-xs text-sand-700">
+                                <x-ui.badge :tone="$payStatus->tone()" size="sm">{{ $payStatus->label() }}</x-ui.badge>
+                                Reçu {{ $fcfa($paid) }}{{ $left > 0 ? ' · reste '.$fcfa($left) : '' }}
                                 · <a href="{{ route('paiements.index', $house) }}" wire:navigate class="underline">Paiements</a>
                             </p>
                             {{-- EF-37 : partage en un clic. --}}

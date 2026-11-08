@@ -60,7 +60,7 @@ test('paiements partiels : dû, payé, reste ; trop-perçu refusé', function ()
     $c1 = $this->occ['Chambre 1'];
     expect(TenantBalance::due($c1, $this->october))->toBe(24333);
 
-    $this->pay->execute($c1, $this->october, 20000, CarbonImmutable::parse('2026-11-05'), PaymentMethod::MobileMoney, $this->owner, 'MTN 12345');
+    $this->pay->execute($c1, $this->october, 20000, CarbonImmutable::parse('2026-11-05'), PaymentMethod::MtnMomo, $this->owner, 'MoMo 12345');
     expect(TenantBalance::remaining($c1, $this->october))->toBe(4333);
 
     expect(fn () => $this->pay->execute($c1, $this->october, 5000, CarbonImmutable::parse('2026-11-06'), PaymentMethod::Cash, $this->owner))
@@ -121,13 +121,13 @@ test('écran des paiements : encaisser, voir le reste, annuler', function (): vo
         ->call('startPayment', $this->occ['Chambre 1']->id, $this->october->id, 24333)
         ->assertSet('amount', '24333')
         ->set('amount', '20 000')
-        ->set('method', 'mobile_money')
+        ->set('method', 'moov_money')
         ->call('savePayment')
         ->assertHasNoErrors()
         ->assertSeeText('Paiement enregistré.')
         // Après une action, assertSee lit le HTML rendu (assertSeeInOrder lirait le JSON brut).
         ->assertSee("21\u{00A0}600 FCFA")
-        ->assertSeeText('Mobile Money');
+        ->assertSeeText('Moov Money');
 
     $payment = Payment::query()->sole();
     expect($payment->amount)->toBe(20000)
@@ -148,10 +148,48 @@ test('écran : trop-perçu refusé sous le champ ; maison d\'un autre propriéta
     $this->actingAs(User::factory()->create())->get(route('paiements.index', $this->house))->assertNotFound();
 });
 
-test('résultat du mois : payé et reste affichés par locataire', function (): void {
+test('résultat du mois : statut, reçu et reste affichés par locataire', function (): void {
     $this->pay->execute($this->occ['Chambre 1'], $this->october, 20000, CarbonImmutable::parse('2026-11-05'), PaymentMethod::Cash, $this->owner);
 
     Livewire::test('app.periodes.recapitulatif', ['house' => $this->house, 'mois' => '2026-10'])
-        ->assertSeeText("Payé 20\u{00A0}000 FCFA · reste 4\u{00A0}333 FCFA")
-        ->assertSeeText("Payé 0 FCFA · reste 17\u{00A0}267 FCFA");
+        ->assertSeeInOrder(['Chambre 1 — A. Houngbédji', 'Partiel', "Reçu 20\u{00A0}000 FCFA · reste 4\u{00A0}333 FCFA"])
+        ->assertSeeInOrder(['Chambre 2 — B. Dossou', 'Impayé', 'Reçu 0 FCFA · reste 17']);
+});
+
+test('statut de chaque répartition clôturée : impayé, partiel, payé ; liste des impayés', function (): void {
+    $c1 = $this->occ['Chambre 1'];
+    $c2 = $this->occ['Chambre 2'];
+
+    $statuses = fn () => collect(app(HouseBalances::class)->execute($this->house)['unpaid'])
+        ->mapWithKeys(fn ($r) => [$r['occupancy']->tenant->name => $r['status']->value])->all();
+
+    expect($statuses())->toBe(['A. Houngbédji' => 'unpaid', 'B. Dossou' => 'unpaid']);
+
+    $this->pay->execute($c1, $this->october, 10000, CarbonImmutable::parse('2026-11-05'), PaymentMethod::MoovMoney, $this->owner);
+    $this->pay->execute($c2, $this->october, 17267, CarbonImmutable::parse('2026-11-05'), PaymentMethod::Cash, $this->owner);
+
+    expect($statuses())->toBe(['A. Houngbédji' => 'partial']);
+
+    Livewire::test('app.paiements.index', ['house' => $this->house])
+        ->assertSeeInOrder(['Impayés', 'Chambre 1 — A. Houngbédji', 'Octobre 2026', "reste 14\u{00A0}333 FCFA", 'Partiel'])
+        ->assertSeeInOrder(['Détail par locataire', 'Chambre 2 — B. Dossou', 'Payé']);
+});
+
+test('moyens proposés : espèces, MTN MoMo, Moov Money, autre ; l\'ancien « Mobile Money » n\'est plus proposé', function (): void {
+    expect(array_map(fn (PaymentMethod $m) => $m->label(), PaymentMethod::selectable()))
+        ->toBe(['Espèces', 'MTN MoMo', 'Moov Money', 'Autre']);
+
+    Livewire::test('app.paiements.index', ['house' => $this->house])
+        ->call('startPayment', $this->occ['Chambre 1']->id, $this->october->id, 24333)
+        ->assertSee('<option value="mtn_momo">MTN MoMo</option>', false)
+        ->assertDontSee('value="mobile_money"', false)
+        ->set('method', 'mobile_money')
+        ->call('savePayment')
+        ->assertHasErrors('method');
+});
+
+test('statut : un montant dû nul (crédit qui couvre tout) est payé', function (): void {
+    expect(App\Shared\Enums\PaymentStatus::for(0, 0))->toBe(App\Shared\Enums\PaymentStatus::Paid)
+        ->and(App\Shared\Enums\PaymentStatus::for(100, 40))->toBe(App\Shared\Enums\PaymentStatus::Partial)
+        ->and(App\Shared\Enums\PaymentStatus::for(100, 0))->toBe(App\Shared\Enums\PaymentStatus::Unpaid);
 });
