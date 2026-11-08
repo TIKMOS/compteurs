@@ -28,7 +28,7 @@
             </div>
 
             <nav class="mx-auto max-w-3xl px-4 flex gap-1" aria-label="Navigation principale">
-                @foreach (['maisons.index' => ['Maisons', 'maisons.*'], 'locataires.index' => ['Locataires', 'locataires.*']] as $routeName => [$text, $pattern])
+                @foreach (['maisons.index' => ['Maisons', 'maisons.*'], 'locataires.index' => ['Locataires', 'locataires.*'], 'journal.index' => ['Journal', 'journal.*']] as $routeName => [$text, $pattern])
                     @php
                         $active = request()->routeIs($pattern) || ($pattern === 'maisons.*' && request()->routeIs('logements.*'));
                     @endphp

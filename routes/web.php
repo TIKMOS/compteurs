@@ -55,6 +55,11 @@ Route::middleware(['auth', 'verified', 'terms'])->group(function (): void {
     // UC-18 : paiements, impayés, remboursements de crédit (lot 2, tranche 3).
     Route::livewire('/maisons/{house}/paiements', 'app.paiements.index')->name('paiements.index');
 
+    // Lot 2, tranche 4 : tableau de bord, export CSV, journal d'activité (H-58).
+    Route::livewire('/maisons/{house}/tableau-de-bord', 'app.maisons.tableau-de-bord')->name('maisons.dashboard');
+    Route::get('/maisons/{house}/historique.csv', App\Modules\Metering\Http\Controllers\HistoryCsvController::class)->name('maisons.export');
+    Route::livewire('/journal', 'app.journal.index')->name('journal.index');
+
     Route::livewire('/locataires', 'app.locataires.index')->name('locataires.index');
     Route::livewire('/locataires/nouveau', 'app.locataires.nouveau')->name('locataires.create');
     Route::livewire('/locataires/{tenant}', 'app.locataires.detail')->name('locataires.show');

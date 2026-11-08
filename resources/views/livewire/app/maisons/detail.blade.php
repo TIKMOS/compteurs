@@ -72,6 +72,9 @@ new class extends Component
                 Paiements
             </x-ui.button>
         </div>
+        <a href="{{ route('maisons.dashboard', $house) }}" wire:navigate class="inline-block text-sm font-medium text-primary-700 hover:underline">
+            Tableau de bord et export
+        </a>
 
         @if ($periods->isNotEmpty())
             <ul class="divide-y divide-sand-200">
