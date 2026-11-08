@@ -53,6 +53,14 @@ final class BillingPeriod extends Model
         return $this->hasMany(UtilityBill::class);
     }
 
+    /**
+     * @return HasMany<CreditSettlement, $this>
+     */
+    public function creditSettlements(): HasMany
+    {
+        return $this->hasMany(CreditSettlement::class);
+    }
+
     public function bill(Utility $utility): ?UtilityBill
     {
         return $this->bills->firstWhere('utility', $utility);

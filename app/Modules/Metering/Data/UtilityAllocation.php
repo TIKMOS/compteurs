@@ -19,6 +19,7 @@ final readonly class UtilityAllocation
         public array $payers,
         public AllocationResult $result,
         public array $credits,
+        public ?ResolvedPrice $price = null,
     ) {}
 
     public function amountFor(int $unitId, ?int $occupancyId): int

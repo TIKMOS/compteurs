@@ -8,6 +8,7 @@ use App\Shared\Enums\Utility;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Facture SBEE ou SONEB d'un mois (EF-19, EF-20). Les champs de tarification sont figés à
@@ -37,6 +38,14 @@ final class UtilityBill extends Model
     public function mainMeter(): BelongsTo
     {
         return $this->belongsTo(MainMeter::class);
+    }
+
+    /**
+     * @return HasMany<Charge, $this>
+     */
+    public function charges(): HasMany
+    {
+        return $this->hasMany(Charge::class);
     }
 
     /**

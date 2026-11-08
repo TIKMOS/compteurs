@@ -414,7 +414,7 @@ new class extends Component
         @endforeach
     </x-ui.card>
 
-    <x-ui.card class="text-sm text-sand-600">
-        Le calcul des participations et la clôture du mois arrivent à l'étape suivante.
-    </x-ui.card>
+    <x-ui.button as="a" href="{{ route('periodes.summary', [$house, $mois]) }}" wire:navigate class="w-full">
+        {{ $closed ? 'Voir le résultat' : 'Voir le calcul et clôturer' }}
+    </x-ui.button>
 </div>

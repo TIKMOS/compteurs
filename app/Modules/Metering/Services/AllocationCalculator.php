@@ -8,6 +8,7 @@ use App\Modules\Metering\Data\AllocatedLine;
 use App\Modules\Metering\Data\AllocationLine;
 use App\Modules\Metering\Data\AllocationResult;
 use App\Modules\Metering\Exceptions\ZeroConsumptionException;
+use App\Shared\Support\Fraction;
 use App\Shared\Support\Milli;
 use InvalidArgumentException;
 
@@ -76,6 +77,56 @@ final class AllocationCalculator
             $totalAmount,
             $totalConsumption,
             Milli::fraction($totalAmount * 1000, $totalConsumption),
+            $allocated,
+        );
+    }
+
+    /**
+     * Mode 2, prix fixé appliqué (EF-40, EF-41) : montant = consommation × prix, arrondi au franc
+     * pour chaque ligne, sans écart d'arrondi à répartir. Avec un plafond (la facture, mode 2
+     * plafonné), un excédent dû aux seuls arrondis est retiré selon l'ordre d'EF-29 (H-31).
+     *
+     * @param list<AllocationLine> $lines consommations facturées en millièmes
+     */
+    public function allocateAtPrice(Fraction $price, array $lines, ?int $cap = null): AllocationResult
+    {
+        $totalConsumption = 0;
+        $rounded = [];
+        $theoretical = [];
+
+        foreach ($lines as $line) {
+            if ($line->consumption < 0) {
+                throw new InvalidArgumentException('Une consommation facturée ne peut pas être négative.');
+            }
+            $totalConsumption += $line->consumption;
+
+            $numerator = $price->numerator * $line->consumption;
+            $denominator = $price->denominator * 1000;
+            $theoretical[$line->key] = Milli::fraction($numerator, $denominator);
+            $rounded[$line->key] = Milli::roundHalfUp($numerator, $denominator);
+        }
+
+        $sum = array_sum($rounded);
+        $adjustments = $cap !== null && $sum > $cap
+            ? $this->distributeGap($cap - $sum, $lines, $rounded)
+            : [];
+
+        $allocated = [];
+        foreach ($lines as $line) {
+            $adjustment = $adjustments[$line->key] ?? 0;
+            $allocated[$line->key] = new AllocatedLine(
+                $line,
+                $theoretical[$line->key],
+                $rounded[$line->key],
+                $adjustment,
+                $rounded[$line->key] + $adjustment,
+            );
+        }
+
+        return new AllocationResult(
+            $cap ?? $sum + array_sum($adjustments),
+            $totalConsumption,
+            (string) $price,
             $allocated,
         );
     }

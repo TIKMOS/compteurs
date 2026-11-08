@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace App\Modules\Metering\Services;
 
 use App\Modules\Metering\Data\CreditLot;
+use App\Modules\Metering\Data\CreditResult;
 use App\Modules\Metering\Data\OccupancySpan;
 use App\Modules\Metering\Data\PayerConsumption;
+use App\Modules\Metering\Data\PricingRule;
 use App\Modules\Metering\Data\Reading;
 use App\Modules\Metering\Data\Segment;
 use App\Modules\Metering\Data\UtilityAllocation;
+use App\Modules\Metering\Exceptions\MissingBillException;
+use App\Modules\Metering\Exceptions\ZeroConsumptionException;
+use App\Shared\Enums\PriceSource;
 use App\Shared\Enums\ReadingKind;
 
 /**
@@ -24,12 +29,50 @@ final class UtilityAllocator
         private readonly CreditLedger $ledger = new CreditLedger,
         private readonly ChargeAggregator $aggregator = new ChargeAggregator,
         private readonly AllocationCalculator $calculator = new AllocationCalculator,
+        private readonly UnitPriceResolver $priceResolver = new UnitPriceResolver,
     ) {}
 
     /**
+     * Calcul selon le mode de calcul du mois (EF-26, EF-39 à EF-44) : le prix appliqué est
+     * résolu sur la Σ des consommations facturées (après crédit), puis réparti.
+     *
+     * @param list<array{unitId: int, unitLabel: string, occupancies: list<OccupancySpan>, subMeters: list<array{id: int, readings: list<Reading>}>, creditLots?: array<string, list<CreditLot>>}> $units
+     *
+     * @throws MissingBillException|ZeroConsumptionException
+     */
+    public function allocateWithPricing(PricingRule $rule, ?int $bill, array $units): UtilityAllocation
+    {
+        [$payers, $credits] = $this->payers($units);
+        $lines = array_map(static fn (PayerConsumption $payer) => $payer->toAllocationLine(), $payers);
+        $total = array_sum(array_map(static fn (PayerConsumption $payer): int => $payer->billed, $payers));
+
+        $price = $this->priceResolver->resolve($rule, $bill, $total);
+
+        $result = $price->source === PriceSource::Actual
+            ? $this->calculator->allocate((int) $bill, $lines)
+            : $this->calculator->allocateAtPrice($price->applied, $lines, $rule->capToActual ? $bill : null);
+
+        return new UtilityAllocation($payers, $result, $credits, $price);
+    }
+
+    /**
+     * Mode 1 (répartition de la facture).
+     *
      * @param list<array{unitId: int, unitLabel: string, occupancies: list<OccupancySpan>, subMeters: list<array{id: int, readings: list<Reading>}>, creditLots?: array<string, list<CreditLot>>}> $units
      */
     public function allocate(int $totalAmount, array $units): UtilityAllocation
+    {
+        return $this->allocateWithPricing(PricingRule::billSplit(), $totalAmount, $units);
+    }
+
+    /**
+     * Tranches → crédit → consommations facturées par payeur.
+     *
+     * @param list<array{unitId: int, unitLabel: string, occupancies: list<OccupancySpan>, subMeters: list<array{id: int, readings: list<Reading>}>, creditLots?: array<string, list<CreditLot>>}> $units
+     *
+     * @return array{0: list<PayerConsumption>, 1: array<int, CreditResult>}
+     */
+    private function payers(array $units): array
     {
         $credits = [];
         $billedByUnit = [];
@@ -50,13 +93,7 @@ final class UtilityAllocator
             $billedByUnit[] = ['unitId' => $unit['unitId'], 'unitLabel' => $unit['unitLabel'], 'segments' => $credit->segments];
         }
 
-        $payers = $this->aggregator->aggregate($billedByUnit, $startedOn);
-        $result = $this->calculator->allocate(
-            $totalAmount,
-            array_map(static fn (PayerConsumption $payer) => $payer->toAllocationLine(), $payers),
-        );
-
-        return new UtilityAllocation($payers, $result, $credits);
+        return [$this->aggregator->aggregate($billedByUnit, $startedOn), $credits];
     }
 
     /**

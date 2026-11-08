@@ -50,6 +50,17 @@ final readonly class Fraction implements Stringable
         return new self((int) $m[1], isset($m[2]) ? (int) $m[2] : 1);
     }
 
+    /** Décimal « 127.50 » (2 décimales au plus) → fraction exacte « 255/2 ». */
+    public static function fromDecimal(string $value): self
+    {
+        if (preg_match('/^(\d+)(?:\.(\d{1,3}))?$/', $value, $m) !== 1) {
+            throw new InvalidArgumentException("Décimal invalide : « {$value} ».");
+        }
+        $decimals = $m[2] ?? '';
+
+        return new self((int) ($m[1] . $decimals), 10 ** strlen($decimals));
+    }
+
     private static function gcd(int $a, int $b): int
     {
         while ($b !== 0) {
@@ -85,6 +96,12 @@ final readonly class Fraction implements Stringable
         $gcd = self::gcd(abs($this->numerator), abs($divisor));
 
         return new self(intdiv($this->numerator, $gcd), $this->denominator * intdiv($divisor, $gcd));
+    }
+
+    /** Comparaison exacte : −1, 0 ou 1 (dénominateurs positifs). */
+    public function compareTo(self $other): int
+    {
+        return ($this->numerator * $other->denominator) <=> ($other->numerator * $this->denominator);
     }
 
     /** Arrondi au plus proche, 0,5 vers le haut ; réservé aux valeurs positives ou nulles. */

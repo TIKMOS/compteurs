@@ -36,6 +36,11 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->name('periodes.show')
         ->where('mois', '\d{4}-\d{2}');
 
+    // UC-13, UC-14 : résultat du mois et clôture (tranche 5).
+    Route::livewire('/maisons/{house}/periodes/{mois}/recapitulatif', 'app.periodes.recapitulatif')
+        ->name('periodes.summary')
+        ->where('mois', '\d{4}-\d{2}');
+
     Route::livewire('/locataires', 'app.locataires.index')->name('locataires.index');
     Route::livewire('/locataires/nouveau', 'app.locataires.nouveau')->name('locataires.create');
     Route::livewire('/locataires/{tenant}', 'app.locataires.detail')->name('locataires.show');

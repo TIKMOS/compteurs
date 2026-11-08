@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Models\BillingPeriod;
+use App\Models\Charge;
 use App\Models\House;
 use App\Models\MeterReading;
 use App\Models\Occupancy;
@@ -9,6 +11,7 @@ use App\Models\SubMeter;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\UtilityBill;
+use App\Shared\Enums\PeriodStatus;
 use App\Shared\Enums\ReadingKind;
 use App\Shared\Enums\Utility;
 use Database\Seeders\DemoSeeder;
@@ -35,7 +38,11 @@ test('le seeder de démonstration crée le propriétaire et sa maison, sans doub
         // 3 mois × 7 décompteurs, et 2 factures par mois.
         ->and(MeterReading::query()->where('kind', ReadingKind::MonthEnd)->count())->toBe(21)
         ->and(UtilityBill::query()->count())->toBe(6)
-        ->and(UtilityBill::query()->where('utility', 'electricity')->orderByDesc('id')->first()->total_amount)->toBe(70000);
+        ->and(UtilityBill::query()->where('utility', 'electricity')->orderByDesc('id')->first()->total_amount)->toBe(70000)
+        // Août à octobre clôturés, Σ des participations = facture ; la Boutique vacante en août.
+        ->and(BillingPeriod::query()->where('status', PeriodStatus::Closed)->count())->toBe(3)
+        ->and((int) Charge::query()->sum('amount'))->toBe(64200 + 17900 + 63900 + 18800 + 70000 + 18505)
+        ->and(Charge::query()->where('kind', 'vacant')->count())->toBe(1);
 
     $this->post('/login', ['login' => '01 97 00 00 00', 'password' => 'password'])->assertRedirect('/maisons');
 });
