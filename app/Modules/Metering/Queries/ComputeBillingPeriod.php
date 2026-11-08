@@ -51,6 +51,25 @@ final class ComputeBillingPeriod
         return (preg_match('/^[aeiouéèêh]/iu', $word) === 1 ? 'd\'' : 'de ') . $word;
     }
 
+    /**
+     * Tranches d'un logement pour un fluide sur le mois (EF-11), tous décompteurs confondus :
+     * sert à détailler les index sur la fiche d'un locataire (EF-36).
+     *
+     * @return list<\App\Modules\Metering\Data\Segment>
+     */
+    public function segmentsFor(Unit $unit, Utility $utility, BillingPeriod $period): array
+    {
+        $unit->loadMissing(['subMeters.readings', 'occupancies']);
+        $segments = [];
+        foreach ($this->metersOfMonth($unit, $utility, $period->month, $period->monthEnd()) as $meter) {
+            array_push($segments, ...$this->segmentBuilder->build($this->readingsOfMonth($meter, $period), $this->spans($unit)));
+        }
+
+        usort($segments, fn ($a, $b): int => strcmp($a->end->sortKey(), $b->end->sortKey()));
+
+        return $segments;
+    }
+
     public function execute(BillingPeriod $period): PeriodComputation
     {
         $period->loadMissing(['house.mainMeters', 'house.pricings', 'bills']);

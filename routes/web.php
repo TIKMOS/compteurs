@@ -47,6 +47,11 @@ Route::middleware(['auth', 'verified', 'terms'])->group(function (): void {
         ->name('periodes.summary')
         ->where('mois', '\d{4}-\d{2}');
 
+    // EF-37 : fiche PDF d'un locataire pour un mois clôturé (lot 2, tranche 2).
+    Route::get('/maisons/{house}/periodes/{mois}/fiches/{occupancy}', App\Modules\Metering\Http\Controllers\TenantStatementPdfController::class)
+        ->name('periodes.statement')
+        ->where(['mois' => '\d{4}-\d{2}', 'occupancy' => '\d+']);
+
     Route::livewire('/locataires', 'app.locataires.index')->name('locataires.index');
     Route::livewire('/locataires/nouveau', 'app.locataires.nouveau')->name('locataires.create');
     Route::livewire('/locataires/{tenant}', 'app.locataires.detail')->name('locataires.show');

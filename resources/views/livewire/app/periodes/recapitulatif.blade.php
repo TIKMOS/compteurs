@@ -80,8 +80,30 @@ new class extends Component
             return;
         }
 
-        unset($this->period, $this->summary);
+        unset($this->period, $this->summary, $this->reopenRefusal, $this->statements);
         $this->closeErrors = [];
+    }
+
+    /**
+     * Fiches des locataires d'un mois clôturé, pour le partage (EF-37) ; vide en brouillon.
+     *
+     * @return array<int, \App\Modules\Metering\Data\TenantStatement>
+     */
+    #[Computed]
+    public function statements(): array
+    {
+        $period = $this->period;
+        if ($period === null || ! $period->isClosed()) {
+            return [];
+        }
+
+        $statements = [];
+        foreach ($this->summary->tenants as $tenant) {
+            $occupancy = \App\Models\Occupancy::query()->with(['tenant', 'unit'])->find($tenant['occupancyId']);
+            $statements[$tenant['occupancyId']] = app(\App\Modules\Metering\Queries\BuildTenantStatement::class)->execute($period, $occupancy);
+        }
+
+        return $statements;
     }
 
     /**
@@ -111,7 +133,7 @@ new class extends Component
 
         $this->reopening = false;
         $this->reopenReason = '';
-        unset($this->period, $this->summary, $this->reopenRefusal);
+        unset($this->period, $this->summary, $this->reopenRefusal, $this->statements);
     }
 
     public function render(): mixed
@@ -244,6 +266,18 @@ new class extends Component
                                 @endif
                             @endif
                         </dl>
+
+                        @php
+                            $statement = $this->statements[$tenant['occupancyId']] ?? null;
+                        @endphp
+                        @if ($statement)
+                            {{-- EF-37 : partage en un clic. --}}
+                            <div class="mt-3 grid grid-cols-3 gap-2">
+                                <x-ui.button as="a" href="{{ $statement->whatsappUrl() }}" target="_blank" rel="noopener" variant="outline" size="sm">WhatsApp</x-ui.button>
+                                <x-ui.button as="a" href="{{ $statement->smsUrl() }}" variant="outline" size="sm">SMS</x-ui.button>
+                                <x-ui.button as="a" href="{{ route('periodes.statement', [$house, $mois, $tenant['occupancyId']]) }}" variant="outline" size="sm">Fiche PDF</x-ui.button>
+                            </div>
+                        @endif
                     </div>
                 @endforeach
 

@@ -8,12 +8,9 @@ use App\Models\BillingPeriod;
 use App\Models\Charge;
 use App\Models\ConsumptionCredit;
 use App\Modules\Metering\Data\PeriodComputation;
-use App\Modules\Metering\Data\PricingRule;
 use App\Modules\Metering\Data\ResolvedPrice;
-use App\Shared\Enums\PriceSource;
 use App\Shared\Enums\PricingMode;
 use App\Shared\Enums\Utility;
-use App\Shared\Support\Fraction;
 use App\Shared\Support\Milli;
 
 /**
@@ -96,13 +93,7 @@ final readonly class PeriodSummary
                 continue;
             }
 
-            $rule = new PricingRule(PricingMode::from($bill->pricing_mode), $bill->fixed_unit_price, (bool) $bill->cap_to_actual);
-            $price = new ResolvedPrice(
-                $rule,
-                $bill->actual_unit_price === null ? null : Fraction::parse($bill->actual_unit_price),
-                Fraction::parse($bill->unit_price),
-                PriceSource::from($bill->price_source),
-            );
+            $price = ResolvedPrice::fromBill($bill);
 
             $charges = $bill->charges->sortBy(fn (Charge $c): string => mb_strtolower($c->unit->label) . '|' . ($c->occupancy?->started_on->toDateString() ?? '9'), SORT_NATURAL);
             $lines = [];
@@ -185,7 +176,7 @@ final readonly class PeriodSummary
                     continue;
                 }
                 $id = $line['occupancyId'];
-                $tenants[$id] ??= ['name' => $line['payer'], 'unitLabel' => $line['unitLabel'], 'amounts' => [], 'estimated' => false, 'total' => 0];
+                $tenants[$id] ??= ['occupancyId' => $id, 'name' => $line['payer'], 'unitLabel' => $line['unitLabel'], 'amounts' => [], 'estimated' => false, 'total' => 0];
                 $tenants[$id]['amounts'][$block['utility']->value] = $line['amount'];
                 $tenants[$id]['estimated'] = $tenants[$id]['estimated'] || $line['estimated'];
                 $tenants[$id]['total'] += $line['amount'];

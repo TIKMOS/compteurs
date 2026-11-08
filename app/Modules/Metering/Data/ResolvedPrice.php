@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Metering\Data;
 
+use App\Models\UtilityBill;
 use App\Shared\Enums\PriceSource;
 use App\Shared\Enums\PricingMode;
 use App\Shared\Support\Fraction;
@@ -21,6 +22,23 @@ final readonly class ResolvedPrice
         public Fraction $applied,
         public PriceSource $source,
     ) {}
+
+    /**
+     * Prix figé à la clôture (colonnes de utility_bills), ou null si le mois n'est pas figé.
+     */
+    public static function fromBill(UtilityBill $bill): ?self
+    {
+        if ($bill->unit_price === null || $bill->pricing_mode === null || $bill->price_source === null) {
+            return null;
+        }
+
+        return new self(
+            new PricingRule(PricingMode::from($bill->pricing_mode), $bill->fixed_unit_price, (bool) $bill->cap_to_actual),
+            $bill->actual_unit_price === null ? null : Fraction::parse($bill->actual_unit_price),
+            Fraction::parse($bill->unit_price),
+            PriceSource::from($bill->price_source),
+        );
+    }
 
     /**
      * Arrondi d'affichage à 3 décimales (EF-27), sans zéros inutiles ; 2 décimales fixes pour un prix fixé.

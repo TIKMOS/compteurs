@@ -1607,5 +1607,7 @@ change le calcul d'un cas courant ou modifie fortement le schéma de base de don
 | H-60 | Motif de réouverture (EF-34) : quelle exigence ? | 10 caractères au moins. Le dernier motif et sa date restent sur la période (« Rouvert le … : … ») ; chaque réouverture est aussi tracée au journal. |
 | H-61 | « Aucun relevé saisi » sur le mois suivant (EF-34) : lesquels ? | Tous : fin de mois, entrée, sortie, dépose. Le message invite à les effacer avant de rouvrir. Les factures du mois suivant ne bloquent pas. |
 | H-62 | Que devient un mois rouvert ? | Brouillon : participations, prix figés, lots et mouvements de crédit et soldes de sortie du mois sont effacés ; relevés et factures restent. La tarification redevient modifiable pour ce mois (H-34). La prochaine clôture recalcule tout. |
+| H-63 | Fiche PDF et partage (EF-37) pour un mois en brouillon ? | Non : seulement pour un mois clôturé, dont les montants sont figés (ENF-08). Le brouillon reste consultable à l'écran. |
+| H-64 | WhatsApp quand le locataire n'a pas de téléphone ? | Lien `wa.me` sans numéro : WhatsApp ouvre le choix du contact, le message est déjà rédigé. Le SMS s'ouvre de même sans destinataire. |
 | H-41 | Jusqu'où peut-on programmer un changement de prix ? | Mois d'effet choisi parmi les 12 mois qui suivent le premier mois non clôturé. |
 | H-38 | Contenu de l'écart d'encaissement ? | Σ des participations des locataires du fluide − facture, **avant** les déductions de crédit à la sortie (affichées à part, ligne « Propriétaire — remboursement de crédit »). |
