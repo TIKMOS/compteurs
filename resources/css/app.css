@@ -1,0 +1,171 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../vendor/livewire/livewire/dist/*.js';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+@source '../../app/**/*.php';
+
+@plugin '@tailwindcss/forms';
+
+/* Mode sombre : classe `.dark` sur <html> (même stratégie qu'artisandubenin). */
+@variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens repris d'artisandubenin (OKLCH, palettes primary / secondary / sand,
+ * couleurs sémantiques). Seule différence : aucune police web à télécharger (ENF-02,
+ * connexion lente) ; la pile système s'affiche immédiatement.
+ */
+@theme {
+    --font-sans:
+        ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+        sans-serif;
+
+    /* PRIMARY — indigo profond */
+    --color-primary-50: oklch(96% 0.02 264);
+    --color-primary-100: oklch(92% 0.04 264);
+    --color-primary-200: oklch(85% 0.07 264);
+    --color-primary-300: oklch(75% 0.1 264);
+    --color-primary-400: oklch(63% 0.13 264);
+    --color-primary-500: oklch(52% 0.15 264);
+    --color-primary-600: oklch(42% 0.13 264);
+    --color-primary-700: oklch(32% 0.1 264);
+    --color-primary-800: oklch(23% 0.08 264);
+    --color-primary-900: oklch(14% 0.05 264);
+    --color-primary: var(--color-primary-600);
+
+    /* SECONDARY — safran */
+    --color-secondary-50: oklch(97% 0.03 70);
+    --color-secondary-100: oklch(91% 0.07 70);
+    --color-secondary-200: oklch(83% 0.12 70);
+    --color-secondary-300: oklch(74% 0.15 70);
+    --color-secondary-400: oklch(68% 0.17 70);
+    --color-secondary-500: oklch(64% 0.17 70);
+    --color-secondary-600: oklch(54% 0.14 70);
+    --color-secondary-700: oklch(44% 0.11 70);
+    --color-secondary-800: oklch(33% 0.08 70);
+    --color-secondary-900: oklch(22% 0.05 70);
+    --color-secondary: var(--color-secondary-500);
+
+    /* SAND — neutres chauds */
+    --color-sand-50: oklch(98% 0.005 80);
+    --color-sand-100: oklch(95% 0.01 80);
+    --color-sand-200: oklch(89% 0.02 80);
+    --color-sand-300: oklch(80% 0.025 80);
+    --color-sand-400: oklch(64% 0.03 80);
+    --color-sand-500: oklch(53% 0.025 80);
+    --color-sand-600: oklch(43% 0.02 80);
+    --color-sand-700: oklch(34% 0.018 80);
+    --color-sand-800: oklch(24% 0.015 80);
+    --color-sand-900: oklch(15% 0.01 80);
+
+    /* Sémantiques : -fg (texte, contraste AA+), -bg (fond), -border ; alias court = -fg */
+    --color-success-fg: oklch(48% 0.16 145);
+    --color-success-bg: oklch(96% 0.06 142);
+    --color-success-border: oklch(70% 0.14 145);
+    --color-success: var(--color-success-fg);
+
+    --color-warning-fg: oklch(52% 0.16 65);
+    --color-warning-bg: oklch(96% 0.07 80);
+    --color-warning-border: oklch(73% 0.16 70);
+    --color-warning: var(--color-warning-fg);
+
+    --color-danger-fg: oklch(48% 0.19 27);
+    --color-danger-bg: oklch(95% 0.04 27);
+    --color-danger-border: oklch(68% 0.18 27);
+    --color-danger: var(--color-danger-fg);
+
+    --color-info-fg: oklch(46% 0.16 240);
+    --color-info-bg: oklch(95% 0.04 240);
+    --color-info-border: oklch(68% 0.15 240);
+    --color-info: var(--color-info-fg);
+
+    --radius: 0.5rem;
+}
+
+/* Mode sombre : luminosité inversée, teintes conservées. */
+.dark {
+    --color-primary-50: oklch(20% 0.05 264);
+    --color-primary-100: oklch(24% 0.07 264);
+    --color-primary-200: oklch(30% 0.09 264);
+    --color-primary-300: oklch(38% 0.11 264);
+    --color-primary-400: oklch(48% 0.13 264);
+    --color-primary-500: oklch(60% 0.15 264);
+    --color-primary-600: oklch(70% 0.15 264);
+    --color-primary-700: oklch(80% 0.13 264);
+    --color-primary-800: oklch(88% 0.09 264);
+    --color-primary-900: oklch(95% 0.04 264);
+    --color-primary: var(--color-primary-500);
+
+    --color-secondary-50: oklch(22% 0.05 70);
+    --color-secondary-100: oklch(28% 0.08 70);
+    --color-secondary-200: oklch(35% 0.11 70);
+    --color-secondary-300: oklch(45% 0.13 70);
+    --color-secondary-400: oklch(55% 0.15 70);
+    --color-secondary-500: oklch(68% 0.17 70);
+    --color-secondary-600: oklch(75% 0.16 70);
+    --color-secondary-700: oklch(83% 0.13 70);
+    --color-secondary-800: oklch(90% 0.09 70);
+    --color-secondary-900: oklch(96% 0.04 70);
+    --color-secondary: var(--color-secondary-500);
+
+    --color-sand-50: oklch(13% 0.01 80);
+    --color-sand-100: oklch(17% 0.012 80);
+    --color-sand-200: oklch(22% 0.015 80);
+    --color-sand-300: oklch(30% 0.018 80);
+    --color-sand-400: oklch(42% 0.022 80);
+    --color-sand-500: oklch(56% 0.025 80);
+    --color-sand-600: oklch(70% 0.025 80);
+    --color-sand-700: oklch(82% 0.02 80);
+    --color-sand-800: oklch(91% 0.015 80);
+    --color-sand-900: oklch(97% 0.008 80);
+
+    --color-success-fg: oklch(75% 0.16 145);
+    --color-success-bg: oklch(22% 0.06 145);
+    --color-success-border: oklch(55% 0.14 145);
+    --color-success: var(--color-success-fg);
+
+    --color-warning-fg: oklch(78% 0.16 65);
+    --color-warning-bg: oklch(25% 0.07 70);
+    --color-warning-border: oklch(60% 0.16 70);
+    --color-warning: var(--color-warning-fg);
+
+    --color-danger-fg: oklch(72% 0.18 27);
+    --color-danger-bg: oklch(22% 0.07 27);
+    --color-danger-border: oklch(55% 0.18 27);
+    --color-danger: var(--color-danger-fg);
+
+    --color-info-fg: oklch(72% 0.16 240);
+    --color-info-bg: oklch(22% 0.07 240);
+    --color-info-border: oklch(55% 0.16 240);
+    --color-info: var(--color-info-fg);
+
+    color-scheme: dark;
+}
+
+html { color-scheme: light; }
+html.dark { color-scheme: dark; }
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+*:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius);
+}
+
+/* Cibles tactiles ≥ 44 px (ENF-11). */
+button,
+[role='button'],
+input[type='submit'],
+input[type='button'] {
+    min-height: 2.75rem;
+}

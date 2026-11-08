@@ -1,0 +1,58 @@
+# =============================================================================
+# Système et éditeurs
+# =============================================================================
+.DS_Store
+._*
+Thumbs.db
+.idea/
+.vscode/
+.zed/
+.fleet/
+.nova/
+.cursor/
+.phpactor.json
+*.iml
+*.swp
+*~
+
+# =============================================================================
+# Secrets et configuration locale
+# =============================================================================
+.env
+.env.backup
+.env.production
+/auth.json
+
+# =============================================================================
+# Dépendances
+# =============================================================================
+/vendor
+/node_modules
+
+# =============================================================================
+# Laravel
+# =============================================================================
+*.log
+.phpunit.result.cache
+/.phpunit.cache
+# /public/build est COMMITTÉ : Hostinger mutualisé n'a pas Node, le dépôt fournit
+# les assets compilés (cf. docs/STACK.md § 8). Relancer `npm run build` avant
+# chaque commit qui touche resources/css ou resources/js.
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/storage/backups
+/bootstrap/cache/*.php
+/database/database.sqlite
+/database/database.sqlite-*
+_ide_helper.php
+_ide_helper_models.php
+Homestead.json
+Homestead.yaml
+
+# =============================================================================
+# Outils
+# =============================================================================
+.phpstan/
+coverage/
