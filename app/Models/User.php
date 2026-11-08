@@ -9,6 +9,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -20,6 +21,14 @@ final class User extends Authenticatable implements MustVerifyEmail
     use HasFactory;
 
     use Notifiable;
+
+    /**
+     * @return HasMany<House, $this>
+     */
+    public function houses(): HasMany
+    {
+        return $this->hasMany(House::class);
+    }
 
     /**
      * @return array<string, string>

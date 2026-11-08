@@ -82,9 +82,9 @@ test('inscription refusée pour un numéro non béninois', function (): void {
 });
 
 test('un propriétaire vérifié voit sa page « Mes maisons »', function (): void {
-    $this->actingAs(User::factory()->create(['name' => 'Ama Dossou']))
+    $this->actingAs(User::factory()->create())
         ->get('/maisons')
         ->assertOk()
         ->assertSee('Mes maisons')
-        ->assertSee('Bonjour Ama Dossou');
+        ->assertSeeText('Aucune maison pour l\'instant');
 });

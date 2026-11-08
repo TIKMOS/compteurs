@@ -1584,4 +1584,7 @@ change le calcul d'un cas courant ou modifie fortement le schéma de base de don
 | H-35 | Mode 2 activé sans plafond en une seule fois ? | Un seul affichage de l'avertissement, deux confirmations enregistrées (`fixed_price_enabled`, `cap_disabled`) (T-53). |
 | H-36 | Nouvelle version des conditions d'utilisation ? | Acceptation demandée à la connexion suivante, avant tout accès ; version et date enregistrées sur `users`. |
 | H-37 | Précision du prix fixé ? | 2 décimales au plus, strictement positif (`DECIMAL(10,2)`) ; « 127,50 » saisi avec la virgule. |
+| H-39 | Nom d'une maison archivée réutilisable ? | Non : le nom reste unique pour le propriétaire, archives comprises (UK `(user_id, name)`), message « Vous avez déjà une maison de ce nom (archivée ou non) ». |
+| H-40 | Contraintes CHECK de § 4.2 non exprimables de façon portable (MySQL / SQLite) dans les migrations Laravel ? | Vérifiées dans les Actions et les règles de tarification (`PricingRule`), et couvertes par les tests ; les clés uniques et étrangères restent en base. |
+| H-41 | Jusqu'où peut-on programmer un changement de prix ? | Mois d'effet choisi parmi les 12 mois qui suivent le premier mois non clôturé. |
 | H-38 | Contenu de l'écart d'encaissement ? | Σ des participations des locataires du fluide − facture, **avant** les déductions de crédit à la sortie (affichées à part, ligne « Propriétaire — remboursement de crédit »). |

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\House;
+use App\Modules\Metering\Policies\HousePolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Number;
 use Illuminate\Support\ServiceProvider;
 
@@ -16,5 +19,8 @@ final class AppServiceProvider extends ServiceProvider
         // Formats français et franc CFA par défaut pour Number::currency() / Number::format() (ENF-06).
         Number::useLocale((string) config('app.locale'));
         Number::useCurrency((string) config('app.currency'));
+
+        // Les policies vivent dans les modules (app/Modules/*/Policies, cf. docs/STACK.md).
+        Gate::policy(House::class, HousePolicy::class);
     }
 }

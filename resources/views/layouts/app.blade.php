@@ -29,6 +29,12 @@
         </header>
 
         <main class="mx-auto max-w-3xl px-4 py-6">
+            @if (session('status'))
+                <div class="mb-4 rounded-[var(--radius)] border border-success-border bg-success-bg px-3 py-2 text-sm text-success" role="status">
+                    {{ session('status') }}
+                </div>
+            @endif
+
             {{ $slot }}
         </main>
 
