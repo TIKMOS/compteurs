@@ -16,6 +16,11 @@
                 participation de chaque locataire aux frais d'eau et d'électricité de la maison.
             </p>
             <p>
+                <strong>Il s'agit d'une répartition des charges, pas d'une vente</strong> : l'application ne vend ni
+                n'achète d'eau ou d'électricité. Elle répartit entre les occupants le coût des factures de la maison,
+                ou calcule une participation selon le prix fixé par le propriétaire.
+            </p>
+            <p>
                 L'application ne fournit ni eau ni électricité. Elle n'est pas partie aux contrats d'abonnement
                 conclus avec la SBEE ou la SONEB, ni aux contrats de bail entre le propriétaire et ses locataires.
             </p>

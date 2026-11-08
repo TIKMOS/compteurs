@@ -12,7 +12,7 @@ test('la page des conditions est publique et rappelle la responsabilité du prop
     $this->get('/conditions-utilisation')
         ->assertOk()
         ->assertSeeText('Le propriétaire reste seul responsable du respect de ses contrats SBEE et SONEB')
-        ->assertSeeText('répartition des charges');
+        ->assertSeeText('Il s\'agit d\'une répartition des charges, pas d\'une vente');
 });
 
 test('T-55 inscription refusée sans la case, acceptée avec : version et date enregistrées', function (): void {
