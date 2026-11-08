@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Modules\Metering\Data\Reading;
+use App\Shared\Casts\DateOnly;
+use App\Shared\Enums\ReadingKind;
 use App\Shared\Enums\Utility;
+use App\Shared\Support\Milli;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Number;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Décompteur privé d'un logement pour un fluide (EF-04). Un remplacement le dépose
@@ -33,9 +37,7 @@ final class SubMeter extends Model
      */
     public static function formatIndex(string $index): string
     {
-        $decimals = strlen(rtrim(substr(strrchr($index, '.') ?: '', 1), '0'));
-
-        return Number::format((float) $index, precision: $decimals, locale: 'fr');
+        return Milli::format(Milli::fromDecimal($index));
     }
 
     /**
@@ -52,12 +54,37 @@ final class SubMeter extends Model
     }
 
     /**
-     * La pose (date, index) se corrige tant qu'aucun relevé ne s'appuie dessus.
-     * Les relevés arrivent avec la tranche 4 : d'ici là, toujours vrai.
+     * @return HasMany<MeterReading, $this>
+     */
+    public function readings(): HasMany
+    {
+        return $this->hasMany(MeterReading::class);
+    }
+
+    /**
+     * La pose (date, index) se corrige tant qu'aucun relevé ne s'appuie dessus (H-44).
      */
     public function installationIsEditable(): bool
     {
-        return true;
+        return ! $this->readings()->exists();
+    }
+
+    /**
+     * Chaîne des relevés du décompteur, pose comprise, dans l'ordre d'EF-11.
+     *
+     * @return list<Reading>
+     */
+    public function readingChain(): array
+    {
+        $chain = [new Reading(ReadingKind::Installation, $this->installed_on, Milli::fromDecimal($this->install_index))];
+
+        foreach ($this->readings()->get() as $reading) {
+            $chain[] = $reading->toReading();
+        }
+
+        usort($chain, fn (Reading $a, Reading $b): int => strcmp($a->sortKey(), $b->sortKey()));
+
+        return $chain;
     }
 
     /**
@@ -67,9 +94,9 @@ final class SubMeter extends Model
     {
         return [
             'utility' => Utility::class,
-            'installed_on' => 'immutable_date',
+            'installed_on' => DateOnly::class,
             'install_index' => 'decimal:3',
-            'removed_on' => 'immutable_date',
+            'removed_on' => DateOnly::class,
             'removal_index' => 'decimal:3',
             'is_active' => 'boolean',
         ];

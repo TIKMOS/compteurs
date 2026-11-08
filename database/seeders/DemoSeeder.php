@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\House;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Modules\Metering\Actions\CreateHouse;
 use App\Modules\Metering\Actions\CreateUnit;
+use App\Modules\Metering\Actions\StartOccupancy;
 use App\Modules\Metering\Data\PricingRule;
 use App\Modules\Metering\Data\SubMeterInstallation;
 use Carbon\CarbonImmutable;
@@ -18,7 +20,7 @@ use Illuminate\Support\Facades\Hash;
  * Données de démonstration, rejouables sans doublon : un propriétaire et la maison
  * « Cotonou Fidjrossè » de CONCEPTION.md § 5.
  *
- * 4 logements et leurs décompteurs (tranche 2). À compléter : locataires (tranche 3),
+ * 4 logements et leurs décompteurs (tranche 2), 4 locataires (tranche 3). À compléter :
  * 3 mois de relevés et de factures (tranche 4).
  *
  *   php artisan db:seed --class=DemoSeeder
@@ -50,6 +52,35 @@ final class DemoSeeder extends Seeder
             );
 
         $this->seedUnits($house);
+        $this->seedOccupancies($owner, $house);
+    }
+
+    /**
+     * Locataires de CONCEPTION.md § 5, entrés le jour de la pose ; la Boutique est vacante en
+     * août (consommation au propriétaire, EF-10) puis louée à partir du 01/09/2026.
+     */
+    private function seedOccupancies(User $owner, House $house): void
+    {
+        $occupants = [
+            'Chambre 1' => ['A. Houngbédji', '+2290197000101', '2026-08-01', ['electricity' => '966', 'water' => '394']],
+            'Chambre 2' => ['B. Dossou', '+2290197000102', '2026-08-01', ['electricity' => '3290', 'water' => '174']],
+            'Chambre 3' => ['C. Agossou', '+2290197000103', '2026-08-01', ['electricity' => '287', 'water' => '932']],
+            'Boutique' => ['M. Hounkpè', '+2290197000104', '2026-09-01', ['electricity' => '5040']],
+        ];
+
+        foreach ($occupants as $label => [$name, $phone, $date, $indexes]) {
+            $unit = $house->units()->where('label', $label)->first();
+            if ($unit === null || $unit->occupancies()->exists()) {
+                continue;
+            }
+
+            $tenant = Tenant::query()->firstOrCreate(
+                ['user_id' => $owner->id, 'phone' => $phone],
+                ['name' => $name],
+            );
+
+            app(StartOccupancy::class)->execute($unit, $tenant, CarbonImmutable::parse($date), $indexes);
+        }
     }
 
     /**

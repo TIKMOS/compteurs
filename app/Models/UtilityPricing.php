@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Modules\Metering\Data\PricingRule;
+use App\Shared\Casts\DateOnly;
+use App\Shared\Enums\PeriodStatus;
 use App\Shared\Enums\PricingMode;
 use App\Shared\Enums\Utility;
 use Carbon\CarbonImmutable;
@@ -58,12 +60,23 @@ final class UtilityPricing extends Model
     }
 
     /**
-     * Une version utilisée par une période clôturée est immuable (H-34).
-     * Les périodes arrivent avec la tranche 4 : d'ici là, aucune version n'est utilisée.
+     * Une version utilisée par une période clôturée est immuable (H-34) : c'est le cas si un
+     * mois clôturé de la maison tombe entre son mois d'effet et celui de la version suivante.
      */
     public function isUsedByClosedPeriod(): bool
     {
-        return false;
+        $nextEffectiveFrom = self::query()
+            ->where('house_id', $this->house_id)
+            ->where('utility', $this->utility)
+            ->where('effective_from', '>', $this->effective_from->toDateString())
+            ->min('effective_from');
+
+        return BillingPeriod::query()
+            ->where('house_id', $this->house_id)
+            ->where('status', PeriodStatus::Closed)
+            ->where('month', '>=', $this->effective_from->toDateString())
+            ->when($nextEffectiveFrom !== null, fn ($q) => $q->where('month', '<', $nextEffectiveFrom))
+            ->exists();
     }
 
     /**
@@ -76,7 +89,7 @@ final class UtilityPricing extends Model
             'mode' => PricingMode::class,
             'fixed_unit_price' => 'decimal:2',
             'cap_to_actual' => 'boolean',
-            'effective_from' => 'immutable_date',
+            'effective_from' => DateOnly::class,
         ];
     }
 }

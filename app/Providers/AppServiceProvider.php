@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\House;
+use App\Models\Tenant;
 use App\Models\Unit;
 use App\Modules\Metering\Policies\HousePolicy;
+use App\Modules\Metering\Policies\TenantPolicy;
 use App\Modules\Metering\Policies\UnitPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Number;
@@ -25,5 +27,6 @@ final class AppServiceProvider extends ServiceProvider
         // Les policies vivent dans les modules (app/Modules/*/Policies, cf. docs/STACK.md).
         Gate::policy(House::class, HousePolicy::class);
         Gate::policy(Unit::class, UnitPolicy::class);
+        Gate::policy(Tenant::class, TenantPolicy::class);
     }
 }

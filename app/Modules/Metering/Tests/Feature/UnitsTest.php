@@ -148,8 +148,8 @@ test('fiche du logement : renommer, ajouter le décompteur manquant, corriger la
         ->assertHasNoErrors()
         ->assertSee('Le décompteur d', false)
         ->call('editMeter', 'electricity')
-        // Espace fine insécable entre les milliers (ENF-06) ; elle est acceptée à la relecture.
-        ->assertSet('installIndexes.electricity', "1\u{202F}250")
+        // Espace insécable entre les milliers (ENF-06) ; elle est acceptée à la relecture.
+        ->assertSet('installIndexes.electricity', "1\u{00A0}250")
         ->set('installIndexes.electricity', '1 251,5')
         ->set('serials.electricity', 'EL-9')
         ->call('saveMeter')

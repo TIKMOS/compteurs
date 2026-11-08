@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Shared\Concerns\HasUlid;
 use App\Shared\Enums\Utility;
+use Carbon\CarbonImmutable;
 use Database\Factories\UnitFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
@@ -59,6 +60,37 @@ final class Unit extends Model
     public function subMeters(): HasMany
     {
         return $this->hasMany(SubMeter::class);
+    }
+
+    /**
+     * @return HasMany<Occupancy, $this>
+     */
+    public function occupancies(): HasMany
+    {
+        return $this->hasMany(Occupancy::class);
+    }
+
+    /**
+     * Occupation en cours (sans date de sortie), ou null si le logement est vacant (EF-10).
+     */
+    public function currentOccupancy(): ?Occupancy
+    {
+        return $this->occupancies->first(fn (Occupancy $o): bool => $o->ended_on === null);
+    }
+
+    /**
+     * Fin de la dernière occupation terminée : début de la vacance en cours.
+     */
+    public function vacantSince(): ?CarbonImmutable
+    {
+        if ($this->currentOccupancy() !== null) {
+            return null;
+        }
+
+        return $this->occupancies
+            ->sortBy(fn (Occupancy $o): string => $o->ended_on?->toDateString() ?? '')
+            ->last()
+            ?->ended_on;
     }
 
     public function activeSubMeter(Utility $utility): ?SubMeter

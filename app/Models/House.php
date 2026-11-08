@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Shared\Concerns\HasUlid;
+use App\Shared\Enums\PeriodStatus;
 use App\Shared\Enums\Utility;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -102,14 +103,21 @@ final class House extends Model
     }
 
     /**
-     * Mois de la dernière période clôturée.
-     *
-     * Les périodes (billing_periods) arrivent avec la tranche 4 du lot 1 : d'ici là, aucune
-     * période n'est clôturée.
+     * @return HasMany<BillingPeriod, $this>
+     */
+    public function billingPeriods(): HasMany
+    {
+        return $this->hasMany(BillingPeriod::class);
+    }
+
+    /**
+     * Mois de la dernière période clôturée, ou null si aucune ne l'est.
      */
     public function lastClosedMonth(): ?CarbonImmutable
     {
-        return null;
+        $month = $this->billingPeriods()->where('status', PeriodStatus::Closed)->max('month');
+
+        return $month === null ? null : CarbonImmutable::parse($month)->startOfMonth();
     }
 
     /**

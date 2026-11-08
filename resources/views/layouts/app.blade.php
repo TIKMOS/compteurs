@@ -26,6 +26,19 @@
                     <x-ui.button type="submit" variant="ghost" size="sm">Se déconnecter</x-ui.button>
                 </form>
             </div>
+
+            <nav class="mx-auto max-w-3xl px-4 flex gap-1" aria-label="Navigation principale">
+                @foreach (['maisons.index' => ['Maisons', 'maisons.*'], 'locataires.index' => ['Locataires', 'locataires.*']] as $routeName => [$text, $pattern])
+                    @php
+                        $active = request()->routeIs($pattern) || ($pattern === 'maisons.*' && request()->routeIs('logements.*'));
+                    @endphp
+                    <a href="{{ route($routeName) }}" wire:navigate
+                        @if ($active) aria-current="page" @endif
+                        class="px-3 py-2.5 text-sm font-medium border-b-2 {{ $active ? 'border-primary-600 text-primary-700' : 'border-transparent text-sand-600 hover:text-sand-900' }}">
+                        {{ $text }}
+                    </a>
+                @endforeach
+            </nav>
         </header>
 
         <main class="mx-auto max-w-3xl px-4 py-6">

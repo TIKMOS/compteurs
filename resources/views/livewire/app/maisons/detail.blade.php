@@ -27,7 +27,7 @@ new class extends Component
      */
     public function units(): Collection
     {
-        return Unit::sortNaturally($this->house->units()->with('subMeters')->get());
+        return Unit::sortNaturally($this->house->units()->with(['subMeters', 'occupancies.tenant'])->get());
     }
 
     public function archive(): void
@@ -102,6 +102,9 @@ new class extends Component
                 class="flex items-center justify-between gap-3 rounded-[var(--radius)] border border-sand-200 p-3 hover:border-primary-300">
                 <div class="min-w-0">
                     <p class="font-medium text-sand-900 truncate">{{ $unit->label }}</p>
+                    <p class="text-sm truncate {{ $unit->currentOccupancy() ? 'text-sand-700' : 'text-warning' }}">
+                        {{ $unit->currentOccupancy()?->tenant->name ?? 'Vacant' }}
+                    </p>
                     <div class="mt-1 flex flex-wrap gap-1.5">
                         @foreach (\App\Shared\Enums\Utility::cases() as $utility)
                             @if ($unit->activeSubMeter($utility))

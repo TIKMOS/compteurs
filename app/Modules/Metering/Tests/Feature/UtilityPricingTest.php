@@ -2,21 +2,24 @@
 
 declare(strict_types=1);
 
+use App\Models\BillingPeriod;
 use App\Models\ComplianceAcknowledgement;
 use App\Models\House;
 use App\Models\User;
 use App\Modules\Metering\Actions\ChangeUtilityPricing;
 use App\Modules\Metering\Data\PricingRule;
 use App\Modules\Metering\Exceptions\ComplianceAcknowledgementRequiredException;
+use App\Modules\Metering\Exceptions\PricingEffectiveDateException;
 use App\Shared\Enums\AcknowledgementKind;
+use App\Shared\Enums\PeriodStatus;
 use App\Shared\Enums\PricingMode;
 use App\Shared\Enums\Utility;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 
-// UC-22 / EF-46 : historique des prix avec mois d'effet (D-18, D-24), confirmations (EF-48, T-51, T-52).
-// La règle « mois d'effet après la dernière période clôturée » (T-47) sera testée avec les
-// périodes, en tranche 4 : aucune période n'existe encore.
+// UC-22 / EF-46 : historique des prix avec mois d'effet (D-18, D-24), confirmations (EF-48, T-51, T-52),
+// mois clôturés intouchables (T-47, H-34).
 
 beforeEach(function (): void {
     CarbonImmutable::setTestNow('2026-11-20 10:00:00');
@@ -92,6 +95,33 @@ test('T-48 une version du même mois, non utilisée par une clôture, est corrig
     expect($versions)->toHaveCount(2)
         ->and($versions->last()->fixed_unit_price)->toBe('132.00')
         ->and(ComplianceAcknowledgement::query()->count())->toBe(1);
+});
+
+test('T-47 un mois d\'effet sur un mois clôturé est refusé ; le mois suivant est proposé', function (): void {
+    $this->change->execute($this->house, Utility::Electricity, PricingRule::fixed('127.50'), month('2026-11'), $this->owner, true);
+    foreach (['2026-11-01', '2026-12-01', '2027-01-01', '2027-02-01'] as $m) {
+        BillingPeriod::query()->forceCreate(['ulid' => (string) Str::ulid(), 'house_id' => $this->house->id, 'month' => $m, 'status' => PeriodStatus::Closed]);
+    }
+
+    expect(fn () => $this->change->execute($this->house, Utility::Electricity, PricingRule::fixed('135'), month('2027-02'), $this->owner))
+        ->toThrow(PricingEffectiveDateException::class, 'Février 2027 est clôturé : le nouveau prix peut s\'appliquer au plus tôt à mars 2027.')
+        ->and($this->house->fresh()->firstOpenMonth()->toDateString())->toBe('2027-03-01');
+
+    // Novembre 2026 corrigé sur place avant toute clôture, puis mars 2027 : 2 versions.
+    $this->change->execute($this->house, Utility::Electricity, PricingRule::fixed('135'), month('2027-03'), $this->owner);
+    expect($this->house->fresh()->pricings->where('utility', Utility::Electricity)->pluck('fixed_unit_price')->all())
+        ->toBe(['127.50', '135.00']);
+});
+
+test('H-34 une version utilisée par un mois clôturé n\'est jamais corrigée sur place', function (): void {
+    $version = $this->change->execute($this->house, Utility::Water, PricingRule::fixed('600'), month('2027-01'), $this->owner, true);
+    expect($version->isUsedByClosedPeriod())->toBeFalse();
+
+    BillingPeriod::query()->forceCreate(['ulid' => (string) Str::ulid(), 'house_id' => $this->house->id, 'month' => '2027-01-01', 'status' => PeriodStatus::Closed]);
+
+    expect($version->fresh()->isUsedByClosedPeriod())->toBeTrue()
+        // La version de novembre 2026 (mode 1) n'est utilisée que jusqu'en décembre : aucun mois clôturé.
+        ->and($this->house->fresh()->pricingFor(Utility::Water, month('2026-11'))->isUsedByClosedPeriod())->toBeFalse();
 });
 
 test('aucun changement : aucune version créée', function (): void {

@@ -8,6 +8,7 @@ use App\Modules\Metering\Actions\InstallSubMeter;
 use App\Modules\Metering\Actions\RenameUnit;
 use App\Modules\Metering\Actions\UpdateSubMeter;
 use App\Modules\Metering\Exceptions\ActiveSubMeterExistsException;
+use App\Modules\Metering\Exceptions\OccupancyRejectedException;
 use App\Modules\Metering\Livewire\Concerns\InteractsWithSubMeterForm;
 use App\Shared\Enums\Utility;
 use Illuminate\Validation\Rule;
@@ -43,7 +44,7 @@ new class extends Component
     {
         $this->authorize('view', $unit);
         $this->house = $house;
-        $this->unit = $unit->load('subMeters');
+        $this->unit = $unit->load(['subMeters', 'occupancies.tenant']);
         $this->label = $unit->label;
     }
 
@@ -99,7 +100,11 @@ new class extends Component
             }
             $this->statusMessage = "Le décompteur d'{$utility->label()} est ajouté.";
         } else {
-            app(UpdateSubMeter::class)->execute($meter, $installation);
+            try {
+                app(UpdateSubMeter::class)->execute($meter, $installation);
+            } catch (LogicException $e) {
+                throw ValidationException::withMessages(["installIndexes.{$utility->value}" => $e->getMessage()]);
+            }
             $this->statusMessage = "Le décompteur d'{$utility->label()} est corrigé.";
         }
 
@@ -112,7 +117,13 @@ new class extends Component
         $this->authorize('delete', $this->unit);
         $label = $this->unit->label;
 
-        app(ArchiveUnit::class)->execute($this->unit);
+        try {
+            app(ArchiveUnit::class)->execute($this->unit);
+        } catch (OccupancyRejectedException $e) {
+            $this->addError('archive', $e->getMessage());
+
+            return;
+        }
 
         session()->flash('status', "Le logement « {$label} » est archivé.");
         $this->redirectRoute('maisons.show', $this->house, navigate: true);
@@ -152,6 +163,58 @@ new class extends Component
             {{ $statusMessage }}
         </div>
     @endif
+
+    @php
+        $current = $unit->currentOccupancy();
+        $vacantSince = $unit->vacantSince();
+        $hasMeters = $unit->subMeters->contains(fn ($m) => $m->isActive());
+    @endphp
+
+    <x-ui.card class="space-y-4">
+        <h2 class="text-base font-semibold text-sand-900">Occupation</h2>
+
+        @if ($current)
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <x-ui.badge tone="success">Occupé</x-ui.badge>
+                    <p class="mt-1 font-medium text-sand-900">
+                        <a href="{{ route('locataires.show', $current->tenant) }}" wire:navigate class="hover:underline">{{ $current->tenant->name }}</a>
+                    </p>
+                    <p class="text-sm text-sand-600">depuis le {{ $current->started_on->format('d/m/Y') }}</p>
+                </div>
+            </div>
+            <x-ui.button as="a" href="{{ route('logements.exit', [$house, $unit]) }}" wire:navigate variant="outline" class="w-full sm:w-auto">
+                Enregistrer la sortie
+            </x-ui.button>
+        @else
+            <div>
+                <x-ui.badge tone="warning">Vacant</x-ui.badge>
+                <p class="mt-1 text-sm text-sand-600">
+                    {{ $vacantSince ? 'Depuis le '.$vacantSince->format('d/m/Y').'. ' : '' }}La consommation d'un logement vacant est à la charge du propriétaire.
+                </p>
+            </div>
+            @if ($hasMeters)
+                <x-ui.button as="a" href="{{ route('logements.entry', [$house, $unit]) }}" wire:navigate class="w-full sm:w-auto">
+                    Enregistrer une entrée
+                </x-ui.button>
+            @else
+                <p class="text-sm text-sand-600">Ajoutez d'abord un décompteur pour enregistrer une entrée.</p>
+            @endif
+        @endif
+
+        @if ($unit->occupancies->whereNotNull('ended_on')->isNotEmpty())
+            <details class="text-sm">
+                <summary class="cursor-pointer text-primary-700">Occupants précédents</summary>
+                <ul class="mt-2 space-y-1">
+                    @foreach ($unit->occupancies->whereNotNull('ended_on')->sortByDesc(fn ($o) => $o->started_on->toDateString()) as $past)
+                        <li class="text-sand-700" wire:key="past-{{ $past->id }}">
+                            {{ $past->tenant->name }} : du {{ $past->started_on->format('d/m/Y') }} au {{ $past->ended_on->format('d/m/Y') }}
+                        </li>
+                    @endforeach
+                </ul>
+            </details>
+        @endif
+    </x-ui.card>
 
     @foreach (\App\Shared\Enums\Utility::cases() as $utility)
         @php
@@ -208,5 +271,6 @@ new class extends Component
         >
             Archiver ce logement
         </button>
+        @error('archive') <p class="mt-1 text-sm text-danger" role="alert">{{ $message }}</p> @enderror
     </div>
 </div>

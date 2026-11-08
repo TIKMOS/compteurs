@@ -22,4 +22,16 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::livewire('/maisons/{house}/logements/{unit}', 'app.logements.detail')
         ->name('logements.show')
         ->scopeBindings();
+
+    // UC-04 à UC-06 : locataires, entrée et sortie avec relevé (tranche 3).
+    Route::livewire('/maisons/{house}/logements/{unit}/entree', 'app.logements.entree')
+        ->name('logements.entry')
+        ->scopeBindings();
+    Route::livewire('/maisons/{house}/logements/{unit}/sortie', 'app.logements.sortie')
+        ->name('logements.exit')
+        ->scopeBindings();
+
+    Route::livewire('/locataires', 'app.locataires.index')->name('locataires.index');
+    Route::livewire('/locataires/nouveau', 'app.locataires.nouveau')->name('locataires.create');
+    Route::livewire('/locataires/{tenant}', 'app.locataires.detail')->name('locataires.show');
 });
