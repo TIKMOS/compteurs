@@ -354,6 +354,10 @@ new class extends Component
         Chaque index est enregistré dès que vous quittez le champ : vous pouvez reprendre plus tard.
     </p>
 
+    <div wire:offline class="rounded-[var(--radius)] border border-warning-border bg-warning-bg px-3 py-2 text-sm text-sand-900" role="status">
+        Hors connexion : continuez la saisie, les index sont gardés sur ce téléphone et envoyés au retour du réseau.
+    </div>
+
     @forelse ($this->sheet->units as $row)
         <x-ui.card class="space-y-4" wire:key="unit-{{ $row['unit']->id }}">
             <div>
@@ -386,17 +390,23 @@ new class extends Component
 
                     @if ($m['needsMonthEnd'])
                         <div class="flex items-end gap-2">
-                            <div class="flex-1">
+                            {{-- ENF-03 / ENF-04 : envoi au départ du champ ; sans réseau, l'index est gardé
+                                 sur le téléphone et envoyé au retour (resources/js/offline-queue.js). --}}
+                            <div class="flex-1" x-data="offlineIndex({ page: @js($house->ulid.'/'.$mois), meterId: {{ $id }} })" wire:ignore.self>
                                 <x-ui.input
                                     id="index-{{ $id }}"
                                     label="Index fin {{ $this->month->locale('fr')->isoFormat('MMMM') }}"
                                     inputmode="decimal"
                                     autocomplete="off"
-                                    wire:model.blur="indexes.{{ $id }}"
+                                    x-ref="input"
+                                    x-on:change="save()"
                                     :value="$indexes[$id] ?? ''"
                                     :error="$errors->first('indexes.'.$id)"
                                     :disabled="$closed"
                                 />
+                                <p x-show="pending" x-cloak class="mt-1 text-xs font-medium text-warning" role="status">
+                                    En attente du réseau : cet index sera envoyé dès le retour de la connexion.
+                                </p>
                             </div>
                             @unless ($closed || ($reading && ! $reading->is_estimated))
                                 <x-ui.button variant="outline" size="md" wire:click="estimate({{ $id }})">Estimer</x-ui.button>

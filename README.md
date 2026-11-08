@@ -76,6 +76,7 @@ où l'on trouve le lien à ouvrir.
 php vendor/bin/pest                       # tous les tests
 php vendor/bin/pest --testsuite=Modules   # cœur de calcul (app/Modules/Metering)
 php vendor/bin/pest --filter=T-08         # un cas de CONCEPTION.md § 5.7
+npm run test:js                           # file d'attente hors ligne (Node)
 composer lint                             # vérifie le formatage (Pint)
 php vendor/bin/pint                       # corrige le formatage
 ```

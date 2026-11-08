@@ -4,7 +4,8 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "test:js": "node --test resources/js/tests/*.test.mjs"
     },
     "devDependencies": {
         "@alpinejs/collapse": "^3.15.12",

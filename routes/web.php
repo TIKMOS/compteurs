@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/maisons');
 
+// ENF-04 : page de secours du service worker (public/sw.js) quand le réseau manque.
+Route::view('/hors-ligne', 'pages.hors-ligne')->name('offline');
+
 // EF-51 : conditions d'utilisation, publiques ; acceptation demandée avant tout accès (H-36).
 Route::view('/conditions-utilisation', 'pages.conditions-utilisation')->name('legal.terms');
 Route::livewire('/conditions-utilisation/accepter', 'app.legal.accepter')
