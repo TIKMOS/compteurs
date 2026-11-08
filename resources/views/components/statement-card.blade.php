@@ -1,5 +1,5 @@
 {{-- Fiche d'un locataire à l'écran (EF-36) : même contenu que la fiche PDF. --}}
-@props(['s', 'pdfUrl' => null])
+@props(['s', 'pdfUrl' => null, 'photoUrl' => null])
 
 @php
     /** @var \App\Modules\Metering\Data\TenantStatement $s */
@@ -29,6 +29,11 @@
                 <p class="text-xs text-sand-600">Crédit déduit : {{ $qty($u['creditApplied'], $u['utility']) }}</p>
             @endif
             <p class="text-xs text-sand-600">{{ $u['priceLabel'] }}</p>
+            @if ($photoUrl)
+                @foreach ($u['photoReadingIds'] ?? [] as $readingId)
+                    <a href="{{ $photoUrl($readingId) }}" target="_blank" class="text-xs font-medium text-primary-700 underline">Photo du décompteur</a>
+                @endforeach
+            @endif
             <div class="flex justify-between gap-3">
                 <span class="text-sand-700">Participation ({{ $qty($u['consumption'], $u['utility']) }})</span>
                 <span class="font-medium tabular-nums whitespace-nowrap">{{ $fcfa($u['amount']) }}</span>

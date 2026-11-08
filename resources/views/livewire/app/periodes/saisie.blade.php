@@ -27,6 +27,10 @@ use Livewire\Component;
  */
 new class extends Component
 {
+    use \Livewire\WithFileUploads;
+
+    /** @var array<int, mixed> photo téléversée par décompteur (id), traitée aussitôt */
+    public array $photos = [];
     #[Locked]
     public House $house;
 
@@ -103,6 +107,59 @@ new class extends Component
         }
 
         unset($this->sheet);
+    }
+
+    /**
+     * Photo du décompteur, jointe au relevé de fin de mois dès qu'elle est choisie (lot 3).
+     */
+    public function updatedPhotos(mixed $value, string $meterId): void
+    {
+        $this->resetErrorBag("photos.{$meterId}");
+        $this->validate(
+            ["photos.{$meterId}" => ['required', 'image', 'max:10240']],
+            ["photos.{$meterId}.image" => 'Choisissez une photo (JPEG, PNG ou WebP).', "photos.{$meterId}.max" => 'Photo trop lourde (10 Mo au plus).'],
+        );
+
+        $reading = $this->monthEndReading((int) $meterId);
+        if ($reading === null) {
+            $this->addError("photos.{$meterId}", 'Saisissez d\'abord l\'index : la photo accompagne le relevé.');
+
+            return;
+        }
+
+        try {
+            app(\App\Modules\Metering\Actions\AttachReadingPhoto::class)->execute($reading, $this->photos[$meterId]);
+            $this->saved[(int) $meterId] = 'Photo enregistrée';
+        } catch (PeriodClosedException $e) {
+            $this->addError("photos.{$meterId}", $e->getMessage());
+        }
+
+        unset($this->photos[$meterId], $this->sheet);
+    }
+
+    public function removePhoto(int $meterId): void
+    {
+        $reading = $this->monthEndReading($meterId);
+        if ($reading !== null) {
+            try {
+                app(\App\Modules\Metering\Actions\AttachReadingPhoto::class)->execute($reading, null);
+            } catch (PeriodClosedException $e) {
+                $this->addError("photos.{$meterId}", $e->getMessage());
+            }
+        }
+
+        unset($this->sheet);
+    }
+
+    private function monthEndReading(int $meterId): ?\App\Models\MeterReading
+    {
+        $meter = $this->meter($meterId);
+        $period = $this->sheet->period;
+
+        return $period === null ? null : $meter->readings()
+            ->where('billing_period_id', $period->id)
+            ->where('kind', \App\Shared\Enums\ReadingKind::MonthEnd)
+            ->first();
     }
 
     public function estimate(int $meterId): void
@@ -354,6 +411,21 @@ new class extends Component
                                 </x-ui.badge>
                                 <span class="text-sand-600">{{ $reading->estimation_basis }}</span>
                             @endif
+                            @if ($reading)
+                                @if ($reading->photo_path)
+                                    <a href="{{ route('readings.photo', [$house, $reading->id]) }}" target="_blank" class="font-medium text-primary-700 underline">Voir la photo</a>
+                                    @unless ($closed)
+                                        <button type="button" wire:click="removePhoto({{ $id }})" class="text-danger hover:underline">Retirer</button>
+                                    @endunless
+                                @elseif (! $closed)
+                                    <label class="cursor-pointer font-medium text-primary-700 underline">
+                                        Ajouter une photo
+                                        <input type="file" accept="image/*" capture="environment" class="sr-only" wire:model="photos.{{ $id }}" />
+                                    </label>
+                                @endif
+                                <span wire:loading wire:target="photos.{{ $id }}" class="text-sand-600">Envoi de la photo…</span>
+                            @endif
+                            @error('photos.'.$id) <span class="text-danger">{{ $message }}</span> @enderror
                             @if ($m['consumption'] !== null)
                                 <span class="text-sand-600">Consommation du mois : {{ \App\Shared\Support\Milli::format($m['consumption']) }} {{ $m['utility']->unit() }}</span>
                             @endif

@@ -63,6 +63,10 @@ final class RecordMonthEndReading
             if ($index === null) {
                 if ($existing !== null) {
                     Journal::record('reading_cleared', "Relevé effacé : {$what}", $existing, ['index' => $existing->index_value]);
+                    // La photo jointe au relevé part avec lui (pas de fichier orphelin).
+                    if ($existing->photo_path !== null) {
+                        \Illuminate\Support\Facades\Storage::disk(AttachReadingPhoto::DISK)->delete($existing->photo_path);
+                    }
                     $existing->delete();
                 }
 

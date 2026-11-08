@@ -85,6 +85,13 @@ final class BuildTenantStatement
                 'estimated' => $charge->is_estimated,
                 'regularization' => $charge->includes_regularization,
                 'estimationBasis' => $estimatedEnd === null ? null : $this->estimationBasis($period, $unit->id, $utility),
+                // Photos des relevés de fin de mois du logement (preuve, lot 3).
+                'photoReadingIds' => $period->readings()
+                    ->where('kind', ReadingKind::MonthEnd)
+                    ->whereNotNull('photo_path')
+                    ->whereHas('subMeter', fn ($q) => $q->where('unit_id', $unit->id)->where('utility', $utility))
+                    ->pluck('id')
+                    ->all(),
             ];
         }
 

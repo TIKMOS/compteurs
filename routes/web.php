@@ -22,6 +22,9 @@ Route::middleware('throttle:60,1')->group(function (): void {
     Route::get('/locataire/{token}/fiche/{occupancy}/{mois}', [App\Modules\Metering\Http\Controllers\TenantPortalController::class, 'pdf'])
         ->name('tenant.portal.pdf')
         ->where(['token' => '[A-Za-z0-9]{48}', 'occupancy' => '\d+', 'mois' => '\d{4}-\d{2}']);
+    Route::get('/locataire/{token}/photo/{reading}', [App\Modules\Metering\Http\Controllers\ReadingPhotoController::class, 'tenant'])
+        ->name('tenant.portal.photo')
+        ->where(['token' => '[A-Za-z0-9]{48}', 'reading' => '\d+']);
 });
 
 Route::middleware(['auth', 'verified', 'terms'])->group(function (): void {
@@ -64,6 +67,11 @@ Route::middleware(['auth', 'verified', 'terms'])->group(function (): void {
 
     // UC-18 : paiements, impayés, remboursements de crédit (lot 2, tranche 3).
     Route::livewire('/maisons/{house}/paiements', 'app.paiements.index')->name('paiements.index');
+
+    // Lot 3, tranche 2 : photo du décompteur jointe au relevé.
+    Route::get('/maisons/{house}/releves/{reading}/photo', [App\Modules\Metering\Http\Controllers\ReadingPhotoController::class, 'owner'])
+        ->name('readings.photo')
+        ->where('reading', '\d+');
 
     // Lot 2, tranche 4 : tableau de bord, export CSV, journal d'activité (H-58).
     Route::livewire('/maisons/{house}/tableau-de-bord', 'app.maisons.tableau-de-bord')->name('maisons.dashboard');

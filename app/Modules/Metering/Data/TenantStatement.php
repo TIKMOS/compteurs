@@ -19,7 +19,7 @@ use Illuminate\Support\Str;
 final readonly class TenantStatement
 {
     /**
-     * @param list<array{utility: \App\Shared\Enums\Utility, priceLabel: string, segments: list<array{from: string, to: string, consumption: int}>, raw: int, creditApplied: int, consumption: int, creditBalance: int, amount: int, estimated: bool, regularization: bool, estimationBasis: string|null}> $utilities
+     * @param list<array{utility: \App\Shared\Enums\Utility, priceLabel: string, segments: list<array{from: string, to: string, consumption: int}>, raw: int, creditApplied: int, consumption: int, creditBalance: int, amount: int, estimated: bool, regularization: bool, estimationBasis: string|null, photoReadingIds: list<int>}> $utilities
      */
     public function __construct(
         public BillingPeriod $period,

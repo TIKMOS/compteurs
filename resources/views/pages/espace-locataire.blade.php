@@ -10,7 +10,8 @@
         </div>
 
         @forelse ($statements as $s)
-            <x-statement-card :s="$s" :pdf-url="route('tenant.portal.pdf', [$token, $s->occupancy->id, $s->period->month->format('Y-m')])" />
+            <x-statement-card :s="$s" :pdf-url="route('tenant.portal.pdf', [$token, $s->occupancy->id, $s->period->month->format('Y-m')])"
+                :photo-url="fn (int $readingId) => route('tenant.portal.photo', [$token, $readingId])" />
         @empty
             <p class="text-sm text-sand-600" role="status">Aucun mois n'est encore clôturé pour votre logement.</p>
         @endforelse
