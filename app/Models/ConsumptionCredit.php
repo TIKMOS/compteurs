@@ -36,6 +36,16 @@ final class ConsumptionCredit extends Model
     }
 
     /**
+     * Payeur du lot ; null = propriétaire / logement vacant.
+     *
+     * @return BelongsTo<Occupancy, $this>
+     */
+    public function occupancy(): BelongsTo
+    {
+        return $this->belongsTo(Occupancy::class);
+    }
+
+    /**
      * @return BelongsTo<BillingPeriod, $this>
      */
     public function originPeriod(): BelongsTo

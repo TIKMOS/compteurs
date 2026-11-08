@@ -7,9 +7,12 @@ namespace App\Modules\Metering\Queries;
 use App\Models\BillingPeriod;
 use App\Models\Charge;
 use App\Models\House;
+use App\Models\Payment;
+use App\Modules\Metering\Livewire\MonthSheet;
 use App\Shared\Enums\PeriodStatus;
 use App\Shared\Enums\Utility;
 use App\Shared\Support\Milli;
+use Carbon\CarbonImmutable;
 
 /**
  * Tableau de bord d'une maison (lot 2) : par mois clôturé et par fluide, facture, participations
@@ -18,6 +21,36 @@ use App\Shared\Support\Milli;
  */
 final class HouseDashboard
 {
+    /**
+     * Mois en cours : statut (pas commencé, brouillon, clôturé) et avancement de la saisie.
+     *
+     * @return array{month: CarbonImmutable, period: BillingPeriod|null, status: string, needed: int, done: int, estimated: int}
+     */
+    public function currentMonth(House $house): array
+    {
+        $month = CarbonImmutable::now()->startOfMonth();
+        $sheet = MonthSheet::build($house, $month);
+        $progress = $sheet->progress();
+        $period = $sheet->period;
+
+        return [
+            'month' => $month,
+            'period' => $period,
+            'status' => $period === null ? 'Pas commencé' : ($period->isClosed() ? 'Clôturé' : 'Brouillon'),
+            ...$progress,
+        ];
+    }
+
+    /**
+     * Total encaissé sur les mois clôturés de la maison (paiements reçus).
+     */
+    public function collected(House $house): int
+    {
+        return (int) Payment::query()
+            ->whereHas('billingPeriod', fn ($q) => $q->where('house_id', $house->id))
+            ->sum('amount');
+    }
+
     /**
      * @return list<array{period: BillingPeriod, utilities: array<string, array{bill: int|null, tenants: int, owner: int|null, total: int, mainConsumption: int|null, meters: int, gap: int|null, gapPct: string|null}>, estimated: int}>
      */

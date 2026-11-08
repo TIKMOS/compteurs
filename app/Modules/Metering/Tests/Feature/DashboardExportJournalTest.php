@@ -61,7 +61,7 @@ test('tableau de bord : facture, participations, part du propriétaire, écart d
         ->assertSeeText('Octobre 2026')
         ->assertSeeInOrder(['Participations des locataires', "22\u{00A0}500 FCFA", 'Part du propriétaire', "7\u{00A0}500 FCFA"])
         ->assertSeeText('50 kWh (20,0 %)')
-        ->assertSeeInOrder(['Reste à encaisser', "22\u{00A0}500 FCFA"]);
+        ->assertSeeInOrder(['À encaisser', "22\u{00A0}500 FCFA"]);
 });
 
 test('export CSV : en-têtes, une ligne par participation, format Excel français', function (): void {

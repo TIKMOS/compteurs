@@ -22,31 +22,38 @@ final class MissingMonthEndReadings
      */
     public function forOwner(User $owner, CarbonImmutable $month): array
     {
-        $month = $month->startOfMonth();
         $result = [];
 
         foreach (House::query()->ownedBy($owner)->orderBy('name')->get() as $house) {
-            $period = $house->billingPeriods()->where('month', $month->toDateString())->first();
-            if ($period?->status === PeriodStatus::Closed) {
-                continue;
-            }
-
-            $meters = SubMeter::query()
-                ->whereHas('unit', fn ($q) => $q->where('house_id', $house->id))
-                ->get()
-                ->filter(fn (SubMeter $m): bool => $m->needsMonthEndReading($month));
-
-            $done = $period === null ? 0 : $period->readings()
-                ->where('kind', ReadingKind::MonthEnd)
-                ->whereIn('sub_meter_id', $meters->pluck('id'))
-                ->count();
-
-            $missing = $meters->count() - $done;
-            if ($missing > 0) {
-                $result[] = ['house' => $house, 'missing' => $missing];
-            }
+            array_push($result, ...$this->forHouse($house, $month));
         }
 
         return $result;
+    }
+
+    /**
+     * @return list<array{house: House, missing: int}> vide si rien ne manque
+     */
+    public function forHouse(House $house, CarbonImmutable $month): array
+    {
+        $month = $month->startOfMonth();
+        $period = $house->billingPeriods()->where('month', $month->toDateString())->first();
+        if ($period?->status === PeriodStatus::Closed) {
+            return [];
+        }
+
+        $meters = SubMeter::query()
+            ->whereHas('unit', fn ($q) => $q->where('house_id', $house->id))
+            ->get()
+            ->filter(fn (SubMeter $m): bool => $m->needsMonthEndReading($month));
+
+        $done = $period === null ? 0 : $period->readings()
+            ->where('kind', ReadingKind::MonthEnd)
+            ->whereIn('sub_meter_id', $meters->pluck('id'))
+            ->count();
+
+        $missing = $meters->count() - $done;
+
+        return $missing > 0 ? [['house' => $house, 'missing' => $missing]] : [];
     }
 }

@@ -40,6 +40,24 @@ new class extends Component
         return app(HouseBalances::class)->execute($this->house);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    #[Computed]
+    public function current(): array
+    {
+        return app(HouseDashboard::class)->currentMonth($this->house);
+    }
+
+    /**
+     * @return list<array{type: string, tone: string, message: string, url: string}>
+     */
+    #[Computed]
+    public function alerts(): array
+    {
+        return app(\App\Modules\Metering\Queries\HouseAlerts::class)->execute($this->house);
+    }
+
     public function render(): mixed
     {
         return $this->view()->title('Tableau de bord · '.$this->house->name);
@@ -58,20 +76,58 @@ new class extends Component
         <h1 class="mt-2 text-2xl font-bold text-sand-900">Tableau de bord</h1>
     </div>
 
+    @php
+        $c = $this->current;
+        $b = $this->balances;
+        $unpaidAmount = array_sum(array_map(fn ($r) => $r['remaining'], $b['unpaid']));
+    @endphp
+
+    {{-- Mois en cours --}}
+    <x-ui.card class="space-y-3">
+        <div class="flex items-center justify-between gap-3">
+            <h2 class="text-base font-semibold text-sand-900">{{ \Illuminate\Support\Str::ucfirst($c['month']->locale('fr')->isoFormat('MMMM YYYY')) }}</h2>
+            <x-ui.badge :tone="$c['status'] === 'Clôturé' ? 'success' : 'neutral'">{{ $c['status'] }}</x-ui.badge>
+        </div>
+        <p class="text-sm text-sand-700">
+            {{ $c['done'] }}/{{ $c['needed'] }} relevés saisis{{ $c['estimated'] ? ', dont '.$c['estimated'].' estimé'.($c['estimated'] > 1 ? 's' : '') : '' }}
+        </p>
+        <div class="grid grid-cols-2 gap-2">
+            <x-ui.button as="a" href="{{ route('periodes.show', [$house, $c['month']->format('Y-m')]) }}" wire:navigate size="sm">Saisir les relevés</x-ui.button>
+            <x-ui.button as="a" href="{{ route('periodes.summary', [$house, $c['month']->format('Y-m')]) }}" wire:navigate variant="outline" size="sm">Voir le calcul</x-ui.button>
+        </div>
+    </x-ui.card>
+
+    {{-- Encaissements --}}
     <div class="grid grid-cols-2 gap-3">
-        <a href="{{ route('paiements.index', $house) }}" wire:navigate>
-            <x-ui.card class="hover:border-primary-300">
-                <p class="text-xs text-sand-600">Reste à encaisser</p>
-                <p class="text-lg font-bold tabular-nums whitespace-nowrap {{ $this->balances['totalRemaining'] > 0 ? 'text-warning' : 'text-success' }}">{{ $fcfa($this->balances['totalRemaining']) }}</p>
-            </x-ui.card>
-        </a>
-        <a href="{{ route('paiements.index', $house) }}" wire:navigate>
-            <x-ui.card class="hover:border-primary-300">
-                <p class="text-xs text-sand-600">À rembourser aux locataires</p>
-                <p class="text-lg font-bold tabular-nums whitespace-nowrap">{{ $fcfa($this->balances['totalRefunds']) }}</p>
-            </x-ui.card>
-        </a>
+        @foreach ([
+            ['À encaisser', $b['totalRemaining'], $b['totalRemaining'] > 0 ? 'text-warning' : 'text-success'],
+            ['Encaissé', app(\App\Modules\Metering\Queries\HouseDashboard::class)->collected($house), 'text-sand-900'],
+            ['Impayés ('.count($b['unpaid']).')', $unpaidAmount, count($b['unpaid']) > 0 ? 'text-danger' : 'text-success'],
+            ['À rembourser', $b['totalRefunds'], 'text-sand-900'],
+        ] as [$label, $amount, $color])
+            <a href="{{ route('paiements.index', $house) }}" wire:navigate>
+                <x-ui.card class="hover:border-primary-300">
+                    <p class="text-xs text-sand-600">{{ $label }}</p>
+                    <p class="text-lg font-bold tabular-nums whitespace-nowrap {{ $color }}">{{ $fcfa($amount) }}</p>
+                </x-ui.card>
+            </a>
+        @endforeach
     </div>
+
+    {{-- Alertes --}}
+    <x-ui.card class="space-y-2">
+        <h2 class="text-base font-semibold text-sand-900">Alertes</h2>
+        @forelse ($this->alerts as $alert)
+            <a href="{{ $alert['url'] }}" wire:navigate class="flex items-start gap-2 rounded-[var(--radius)] p-2 text-sm hover:bg-sand-50" wire:key="alert-{{ $loop->index }}">
+                <x-ui.badge :tone="$alert['tone']" size="sm" class="mt-0.5 shrink-0">
+                    {{ ['missing_readings' => 'Relevés', 'estimate_pending' => 'Estimation', 'credit_remaining' => 'Crédit', 'uncapped_fixed_price' => 'Mode 2'][$alert['type']] }}
+                </x-ui.badge>
+                <span class="text-sand-800">{{ $alert['message'] }}</span>
+            </a>
+        @empty
+            <p class="text-sm text-success" role="status">Rien à signaler.</p>
+        @endforelse
+    </x-ui.card>
 
     <div class="flex flex-wrap gap-2">
         <x-ui.button as="a" href="{{ route('maisons.export', $house) }}" variant="outline" size="sm">Exporter l'historique (CSV)</x-ui.button>
