@@ -251,14 +251,14 @@ Versions relevées sur Packagist, npm, nodejs.org et php.net le **2026-11-07**.
 | Tests navigateur | Dusk (installé, jamais utilisé) + Playwright non déclaré | **Pest Browser Testing** (s'appuie sur Playwright) | Un seul outil, écrit en Pest comme les autres tests |
 | Pint | 1.29 | **1.32**, même `pint.json` | Mêmes règles de style |
 | Larastan / PHPStan | 3.10, niveau 8 | **3.14**, niveau 8, même `phpstan.neon` | |
-| GitLab CI | 4 étapes, PHP 8.3 / Node 22 | **Mêmes 4 étapes**, images alignées sur PHP 8.5 (ou 8.4) / `node:24-alpine`, **+ une étape `deploy` manuelle** (SSH + `post-deploy.sh`) | Le déploiement prévu dans artisan, enfin en place |
-| Déploiement | Hostinger cPanel, `post-deploy.sh` | **Identique** | Même hébergeur et même procédure |
+| GitLab CI | 4 étapes, PHP 8.3 / Node 22 | **GitHub Actions** (le dépôt est sur GitHub) : Pint, PHPStan, Pest, tests JS, build Vite, puis **déploiement automatique de `main`** par SSH (`scripts/deploy.sh`) si tout est vert | Le déploiement prévu dans artisan, enfin en place (docs/DEPLOIEMENT.md) |
+| Déploiement | Hostinger cPanel, `post-deploy.sh`, `public/build` commité | **Même hébergeur**, `scripts/deploy.sh` (même principe, + maintenance, sauvegarde et retour arrière) ; assets compilés par la CI ; racine web sur `public/` | docs/DEPLOIEMENT.md |
 
 ### Ce qui ne change pas du tout
 
 Organisation `app/Modules/{Module}` (Actions, Data, Events, Policies, Tests), `app/Shared`,
 conventions de nommage, URLs en français, `declare(strict_types=1)` et classes `final`,
-Conventional Commits, ADR dans `docs/`, `.editorconfig`, `.npmrc`, `scripts/post-deploy.sh`,
+Conventional Commits, ADR dans `docs/`, `.editorconfig`, `.npmrc`, un script de déploiement idempotent (`scripts/deploy.sh`),
 crons Hostinger.
 
 Seul changement dans l'arborescence : les pages Volt `resources/views/livewire/...` deviennent

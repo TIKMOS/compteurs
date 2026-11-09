@@ -85,25 +85,13 @@ Les tests utilisent SQLite en mémoire : MySQL n'a pas besoin d'être démarré.
 
 ## Mise en production (Hostinger)
 
-Hostinger n'a pas Node : les fichiers construits par `npm run build` (`public/build/`) sont
-commités. Lancez `npm run build` et commitez le résultat avant chaque mise en production.
+Tout est dans **[docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md)** : installation sur Hostinger (cPanel, SSH),
+HTTPS, cron, secrets GitHub, sauvegardes, retour arrière.
 
-**Première installation**
-
-1. Dans hPanel : PHP 8.4, une base MySQL, une boîte email (pour l'envoi), SSL activé.
-2. Cloner le dépôt **hors** de `public_html`, par exemple `~/compteurs`, puis faire pointer le
-   domaine sur `~/compteurs/public` (ou remplacer `public_html` par un lien symbolique vers ce dossier).
-3. `cp .env.production.example .env`, remplir la base, l'email et `APP_URL`, puis
-   `php artisan key:generate`. Vérifier `APP_ENV=production` et `APP_DEBUG=false` : avec
-   `APP_DEBUG=true`, une erreur affiche le code source et les mots de passe du `.env`.
-4. `bash scripts/post-deploy.sh`
-5. Tâche cron (hPanel → Avancé → Tâches cron), chaque minute :
-   `cd ~/compteurs && php artisan schedule:run >> /dev/null 2>&1` (rappel de relevés de fin de mois).
-
-**Mises à jour** : `git pull origin main && bash scripts/post-deploy.sh`.
-
-Les photos des décompteurs sont dans `storage/app/private` : elles ne sont jamais servies
-directement, seulement après contrôle d'accès. Sauvegardez ce dossier avec la base de données.
+En bref : chaque push lance la CI GitHub Actions (`.github/workflows/ci.yml` : Pint, PHPStan, Pest,
+tests JS, build Vite). Sur `main`, si tout est vert, elle déploie sur Hostinger par SSH avec
+`scripts/deploy.sh` (maintenance, code, dépendances sans dev, assets, sauvegarde, migrations, caches).
+Retour à la version précédente : `bash scripts/deploy.sh --retour-arriere` sur le serveur.
 
 ## Problème connu : certificat SSL et antivirus Avast
 
@@ -159,6 +147,5 @@ docs/                    ← CONCEPTION.md, STACK.md
 Conventions (cf. `docs/STACK.md`) : `declare(strict_types=1)` et classes `final`, code et tables
 en anglais, interface et URLs en français, Conventional Commits en français.
 
-Le dossier `public/build/` (CSS et JS compilés) est **commité** : l'hébergement mutualisé
-Hostinger n'a pas Node. Lancer `npm run build` avant chaque commit qui modifie `resources/css`
-ou `resources/js`.
+Le dossier `public/build/` (CSS et JS compilés) n'est **pas commité** : en local, `npm run build`
+(ou `npm run dev`) ; en production, la CI le compile et l'envoie sur le serveur (Hostinger n'a pas Node).

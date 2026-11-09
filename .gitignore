@@ -35,9 +35,11 @@ Thumbs.db
 *.log
 .phpunit.result.cache
 /.phpunit.cache
-# /public/build est COMMITTÉ : Hostinger mutualisé n'a pas Node, le dépôt fournit
-# les assets compilés (cf. docs/STACK.md § 8). Relancer `npm run build` avant
-# chaque commit qui touche resources/css ou resources/js.
+# public/build n'est plus commité : la CI (GitHub Actions) compile les assets et les dépose
+# sur le serveur, Hostinger n'ayant pas Node (docs/DEPLOIEMENT.md). En local : npm run build.
+/public/build
+# Fichiers de travail du déploiement sur le serveur (scripts/deploy.sh).
+/.deploy
 /public/hot
 /public/storage
 /storage/*.key

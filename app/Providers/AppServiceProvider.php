@@ -13,6 +13,7 @@ use App\Modules\Metering\Policies\TenantPolicy;
 use App\Modules\Metering\Policies\UnitPolicy;
 use App\Modules\Metering\Services\ClosedPeriodConsumptionHistory;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Number;
 use Illuminate\Support\ServiceProvider;
 
@@ -33,5 +34,8 @@ final class AppServiceProvider extends ServiceProvider
         Gate::policy(House::class, HousePolicy::class);
         Gate::policy(Unit::class, UnitPolicy::class);
         Gate::policy(Tenant::class, TenantPolicy::class);
+
+        // Production : toutes les URL générées (liens signés WhatsApp, emails) en https://.
+        URL::forceHttps($this->app->isProduction());
     }
 }

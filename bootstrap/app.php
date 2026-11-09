@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
     // Commandes des modules (app/Modules/*/Console).
     ->withCommands([__DIR__ . '/../app/Modules/Metering/Console'])
     ->withMiddleware(function (Middleware $middleware): void {
+        // Production : HTTP → HTTPS + HSTS (docs/DEPLOIEMENT.md § 4).
+        $middleware->prepend(App\Http\Middleware\ForceHttps::class);
+
         $middleware->alias([
             'terms' => App\Http\Middleware\EnsureTermsAccepted::class,
         ]);

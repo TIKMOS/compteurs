@@ -1,9 +1,56 @@
+# Racine web = ce dossier public/ (docs/DEPLOIEMENT.md § 2) : le reste du dépôt (.env, vendor,
+# storage…) n'est jamais accessible depuis le navigateur.
+
+Options -Indexes
+DirectoryIndex index.php
+
+# Fichiers cachés (.env, .git…) interdits, sauf .well-known (validation Let's Encrypt).
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule (^|/)\.(?!well-known/) - [F,L]
+</IfModule>
+
+# En-têtes de sécurité (HSTS seulement en HTTPS).
+<IfModule mod_headers.c>
+    Header always set Strict-Transport-Security "max-age=31536000" "expr=%{HTTPS} == 'on' || %{HTTP:X-Forwarded-Proto} == 'https'"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(self)"
+</IfModule>
+
+# Compression (connexions lentes).
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json application/manifest+json image/svg+xml
+</IfModule>
+
+# Cache : les fichiers de build/ ont un nom versionné, on les garde un an ; le service worker
+# doit toujours être revérifié, sinon les mises à jour n'arrivent pas sur les téléphones.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(css|js|woff2|png|svg|webp|ico)$">
+        Header set Cache-Control "public, max-age=604800"
+    </FilesMatch>
+    <FilesMatch "-[A-Za-z0-9_-]{8}\.(css|js)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    <Files "sw.js">
+        Header set Cache-Control "no-cache"
+    </Files>
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
 
     RewriteEngine On
+
+    # HTTPS obligatoire (certificat Let's Encrypt), sauf en local et pour la validation du certificat.
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:[0-9]+)?$ [NC]
+    RewriteCond %{REQUEST_URI} !^/\.well-known/
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .

@@ -33,14 +33,50 @@ test('.env.production.example : production, sans débogage, journaux quotidiens,
         ->and($env['DB_PASSWORD'])->toBe('');
 });
 
-test('le script de mise en production refuse APP_DEBUG=true et met les caches', function (): void {
-    $script = (string) file_get_contents(base_path('scripts/post-deploy.sh'));
+test('le script de déploiement : maintenance, sans paquets de dev, sauvegarde, migrations, caches', function (): void {
+    $script = (string) file_get_contents(base_path('scripts/deploy.sh'));
 
     expect($script)->toContain("grep -qE '^APP_DEBUG=true' .env")
-        ->toContain('php artisan migrate --force')
-        ->toContain('php artisan config:cache')
-        ->toContain('php artisan route:cache')
+        ->toContain('artisan down')
+        ->toContain('install --no-dev --optimize-autoloader')
+        ->toContain('artisan compteurs:sauvegarde')
+        ->toContain('artisan migrate --force')
+        ->toContain('artisan config:cache')
+        ->toContain('artisan route:cache')
+        ->toContain('artisan view:cache')
+        ->toContain('artisan up')
+        ->toContain('--retour-arriere')
         ->not->toContain("\r\n");
+
+    // Ordre : maintenance → code → dépendances → sauvegarde → migrations → caches → réouverture.
+    $positions = array_map(fn (string $needle): int => (int) strpos($script, $needle), [
+        'artisan down', 'git reset', 'install --no-dev', 'compteurs:sauvegarde', 'migrate --force', 'config:cache', 'artisan up',
+    ]);
+    expect($positions)->toBe(array_values(Illuminate\Support\Arr::sort($positions)));
+});
+
+test('le pipeline GitHub Actions ne déploie que main, après les tests, sans secret en clair', function (): void {
+    $ci = (string) file_get_contents(base_path('.github/workflows/ci.yml'));
+
+    expect($ci)->toContain('needs: tests')
+        ->toContain("github.ref == 'refs/heads/main'")
+        ->toContain('secrets.SSH_PRIVATE_KEY')
+        ->toContain('scripts/deploy.sh')
+        ->not->toMatch('/BEGIN [A-Z ]*PRIVATE KEY/')
+        ->not->toMatch('/(PASSWORD|APP_KEY)\s*[:=]\s*\S{6,}/');
+});
+
+test('production : HTTP redirigé vers HTTPS, HSTS en HTTPS ; rien en local', function (): void {
+    $this->get('http://localhost/login')->assertOk();
+
+    app()->detectEnvironment(fn (): string => 'production');
+
+    $this->get('http://localhost/login?x=1')
+        ->assertStatus(301)
+        ->assertRedirect('https://localhost/login?x=1');
+
+    expect($this->get('https://localhost/up')->headers->get('Strict-Transport-Security'))
+        ->toBe('max-age=31536000');
 });
 
 test('les pages d\'erreur ne dépendent ni de Vite ni de Livewire (elles marchent même en panne)', function (): void {

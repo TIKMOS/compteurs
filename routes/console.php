@@ -11,3 +11,9 @@ Schedule::command('compteurs:rappel-releves')
     ->dailyAt('08:00')
     ->timezone('Africa/Porto-Novo')
     ->withoutOverlapping();
+
+// Sauvegarde quotidienne de la base, conservée 30 jours (docs/DEPLOIEMENT.md, § Sauvegardes).
+Schedule::command('compteurs:sauvegarde --jours=30')
+    ->dailyAt('02:30')
+    ->timezone('Africa/Porto-Novo')
+    ->withoutOverlapping();

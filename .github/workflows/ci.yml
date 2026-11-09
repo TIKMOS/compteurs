@@ -1,0 +1,140 @@
+# =============================================================================
+# compteurs — intégration et déploiement continus (GitHub Actions)
+#
+#   À chaque push (toutes branches) et pull request : style, analyse statique, tests PHP et JS,
+#   compilation des assets.
+#   Push sur main ET tests verts : déploiement sur Hostinger par SSH (scripts/deploy.sh).
+#
+# Aucun secret dans ce fichier. Dans GitHub → Settings → Secrets and variables → Actions :
+#   Secrets   : SSH_HOST, SSH_PORT, SSH_USER, SSH_PRIVATE_KEY, SSH_KNOWN_HOSTS, DEPLOY_PATH
+#   Variables : DEPLOY_ENABLED (« true » une fois le serveur prêt), APP_URL, PHP_BIN (facultatif)
+# Procédure complète : docs/DEPLOIEMENT.md § 5.
+# =============================================================================
+name: CI / déploiement
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, intl, gd, zip, pdo_sqlite, sqlite3, bcmath
+          coverage: none
+          tools: composer:v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - name: Dépendances
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          npm ci --no-audit --no-fund
+
+      - name: Style (Pint) et analyse statique (PHPStan)
+        run: composer lint
+
+      - name: Tests PHP (Pest)
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php -d memory_limit=1G vendor/bin/pest
+
+      - name: Tests JavaScript (file hors ligne)
+        run: npm run test:js
+
+      - name: Compilation des assets
+        run: npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: public/build/
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy:
+    name: Déploiement (Hostinger)
+    needs: tests
+    # main seulement, après un push (jamais sur une pull request), et seulement une fois le serveur
+    # préparé (variable DEPLOY_ENABLED=true) : avant, le pipeline s'arrête aux tests.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Jamais deux déploiements en même temps ; un déploiement commencé n'est pas interrompu.
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      PHP_BIN: ${{ vars.PHP_BIN }}
+      APP_URL: ${{ vars.APP_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: build/
+
+      - name: Clé SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host prod
+            HostName ${SSH_HOST}
+            Port ${SSH_PORT:-22}
+            User ${SSH_USER}
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+          EOF
+
+      - name: Envoi des assets compilés et du script
+        run: |
+          ssh prod "mkdir -p '${DEPLOY_PATH}/.deploy' && rm -rf '${DEPLOY_PATH}/.deploy/build-incoming'"
+          scp -q -r build "prod:${DEPLOY_PATH}/.deploy/build-incoming"
+          scp -q scripts/deploy.sh "prod:${DEPLOY_PATH}/.deploy/deploy.sh"
+
+      - name: Déploiement (scripts/deploy.sh)
+        run: ssh prod "APP_DIR='${DEPLOY_PATH}' PHP_BIN='${PHP_BIN:-php}' bash '${DEPLOY_PATH}/.deploy/deploy.sh' '${GITHUB_SHA}'"
+
+      - name: Vérification en ligne
+        if: vars.APP_URL != ''
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 "${APP_URL}/up" > /dev/null
+          test "$(curl -s -o /dev/null -w '%{http_code}' "${APP_URL}/login")" = 200
+          echo "En ligne : ${APP_URL}"
+
+      - name: Nettoyage
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
