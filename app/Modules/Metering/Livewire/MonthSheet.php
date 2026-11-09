@@ -88,7 +88,7 @@ final readonly class MonthSheet
         foreach ($chain as $reading) {
             if (strcmp($reading->sortKey(), $startKey) <= 0) {
                 $start = $reading;
-            } elseif ($reading->readOn->lessThanOrEqualTo($monthEnd)) {
+            } elseif ($reading->readOn <= $monthEnd) {
                 $events[] = $reading;
             }
         }
@@ -116,7 +116,7 @@ final readonly class MonthSheet
             ReadingKind::Entry => 'entrée',
             ReadingKind::Exit => 'sortie',
             ReadingKind::Removal => 'dépose',
-            ReadingKind::MonthEnd => $reading->readOn->lessThan($month) ? 'fin ' . $reading->readOn->locale('fr')->isoFormat('MMMM') : 'fin de mois',
+            ReadingKind::MonthEnd => $reading->readOn < $month ? 'fin ' . CarbonImmutable::instance($reading->readOn)->locale('fr')->isoFormat('MMMM') : 'fin de mois',
         };
 
         return sprintf('%s le %s (%s)', Milli::format($reading->index), $reading->readOn->format('d/m'), $what);

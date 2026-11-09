@@ -117,7 +117,7 @@ test('fiche mensuelle : index, mode et prix, crédit, total en lettres, payé, r
         ->toContain('Index ancien')->toContain('Index nouveau')
         ->toContain("1\u{00A0}250 le 01/10 (entrée)")->toContain("1\u{00A0}392 le 31/10 (fin de mois)")
         ->toContain('Crédit de consommation restant')
-        ->toContain('Mode de calcul et prix : Prix unitaire : 133,333 FCFA/kWh — répartition de la facture')
+        ->toContain('Mode de calcul et prix : Prix unitaire : 133,333 FCFA/kWh — répartition des frais du compteur principal')
         ->toContain("24\u{00A0}333 FCFA")
         ->toContain('Soit vingt-quatre mille trois cent trente-trois francs CFA.')
         ->toContain("10\u{00A0}000 FCFA")

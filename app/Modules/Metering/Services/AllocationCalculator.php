@@ -10,6 +10,7 @@ use App\Modules\Metering\Data\AllocationResult;
 use App\Modules\Metering\Exceptions\ZeroConsumptionException;
 use App\Shared\Support\Fraction;
 use App\Shared\Support\Milli;
+use App\Shared\Support\SafeInt;
 use InvalidArgumentException;
 
 /**
@@ -54,7 +55,7 @@ final class AllocationCalculator
         $rounded = [];
         $theoretical = [];
         foreach ($lines as $line) {
-            $numerator = $totalAmount * $line->consumption;
+            $numerator = SafeInt::mul($totalAmount, $line->consumption);
             $theoretical[$line->key] = Milli::fraction($numerator, $totalConsumption);
             $rounded[$line->key] = Milli::roundHalfUp($numerator, $totalConsumption);
         }
@@ -76,7 +77,7 @@ final class AllocationCalculator
         return new AllocationResult(
             $totalAmount,
             $totalConsumption,
-            Milli::fraction($totalAmount * 1000, $totalConsumption),
+            Milli::fraction(SafeInt::mul($totalAmount, 1000), $totalConsumption),
             $allocated,
         );
     }
@@ -100,8 +101,8 @@ final class AllocationCalculator
             }
             $totalConsumption += $line->consumption;
 
-            $numerator = $price->numerator * $line->consumption;
-            $denominator = $price->denominator * 1000;
+            $numerator = SafeInt::mul($price->numerator, $line->consumption);
+            $denominator = SafeInt::mul($price->denominator, 1000);
             $theoretical[$line->key] = Milli::fraction($numerator, $denominator);
             $rounded[$line->key] = Milli::roundHalfUp($numerator, $denominator);
         }

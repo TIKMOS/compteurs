@@ -83,6 +83,28 @@ php vendor/bin/pint                       # corrige le formatage
 
 Les tests utilisent SQLite en mémoire : MySQL n'a pas besoin d'être démarré.
 
+## Mise en production (Hostinger)
+
+Hostinger n'a pas Node : les fichiers construits par `npm run build` (`public/build/`) sont
+commités. Lancez `npm run build` et commitez le résultat avant chaque mise en production.
+
+**Première installation**
+
+1. Dans hPanel : PHP 8.4, une base MySQL, une boîte email (pour l'envoi), SSL activé.
+2. Cloner le dépôt **hors** de `public_html`, par exemple `~/compteurs`, puis faire pointer le
+   domaine sur `~/compteurs/public` (ou remplacer `public_html` par un lien symbolique vers ce dossier).
+3. `cp .env.production.example .env`, remplir la base, l'email et `APP_URL`, puis
+   `php artisan key:generate`. Vérifier `APP_ENV=production` et `APP_DEBUG=false` : avec
+   `APP_DEBUG=true`, une erreur affiche le code source et les mots de passe du `.env`.
+4. `bash scripts/post-deploy.sh`
+5. Tâche cron (hPanel → Avancé → Tâches cron), chaque minute :
+   `cd ~/compteurs && php artisan schedule:run >> /dev/null 2>&1` (rappel de relevés de fin de mois).
+
+**Mises à jour** : `git pull origin main && bash scripts/post-deploy.sh`.
+
+Les photos des décompteurs sont dans `storage/app/private` : elles ne sont jamais servies
+directement, seulement après contrôle d'accès. Sauvegardez ce dossier avec la base de données.
+
 ## Problème connu : certificat SSL et antivirus Avast
 
 **Symptôme** : `composer install` ou `composer require` échoue avec

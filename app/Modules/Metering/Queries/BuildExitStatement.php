@@ -80,10 +80,10 @@ final class BuildExitStatement
             $occupancy,
             $readings,
             $lots,
-            creditValue: $settlement?->credit_value ?? 0,
-            lastStatementTotal: TenantBalance::due($occupancy, $period) + ($settlement?->deducted_amount ?? 0),
-            deducted: $settlement?->deducted_amount ?? 0,
-            refundDue: $settlement?->refund_due ?? 0,
+            creditValue: $settlement->credit_value ?? 0,
+            lastStatementTotal: TenantBalance::due($occupancy, $period) + ($settlement->deducted_amount ?? 0),
+            deducted: $settlement->deducted_amount ?? 0,
+            refundDue: $settlement->refund_due ?? 0,
             paid: TenantBalance::paid($occupancy, $period),
         );
     }

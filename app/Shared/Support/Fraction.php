@@ -73,10 +73,10 @@ final readonly class Fraction implements Stringable
     public function add(self $other): self
     {
         $gcd = self::gcd($this->denominator, $other->denominator);
-        $lcm = intdiv($this->denominator, $gcd) * $other->denominator;
+        $lcm = SafeInt::mul(intdiv($this->denominator, $gcd), $other->denominator);
 
         return new self(
-            $this->numerator * intdiv($lcm, $this->denominator) + $other->numerator * intdiv($lcm, $other->denominator),
+            SafeInt::add(SafeInt::mul($this->numerator, intdiv($lcm, $this->denominator)), SafeInt::mul($other->numerator, intdiv($lcm, $other->denominator))),
             $lcm,
         );
     }
@@ -85,7 +85,7 @@ final readonly class Fraction implements Stringable
     {
         $gcd = self::gcd(abs($factor), $this->denominator);
 
-        return new self($this->numerator * intdiv($factor, $gcd), intdiv($this->denominator, $gcd));
+        return new self(SafeInt::mul($this->numerator, intdiv($factor, $gcd)), intdiv($this->denominator, $gcd));
     }
 
     public function divide(int $divisor): self
@@ -95,13 +95,13 @@ final readonly class Fraction implements Stringable
         }
         $gcd = self::gcd(abs($this->numerator), abs($divisor));
 
-        return new self(intdiv($this->numerator, $gcd), $this->denominator * intdiv($divisor, $gcd));
+        return new self(intdiv($this->numerator, $gcd), SafeInt::mul($this->denominator, intdiv($divisor, $gcd)));
     }
 
     /** Comparaison exacte : −1, 0 ou 1 (dénominateurs positifs). */
     public function compareTo(self $other): int
     {
-        return ($this->numerator * $other->denominator) <=> ($other->numerator * $this->denominator);
+        return SafeInt::mul($this->numerator, $other->denominator) <=> SafeInt::mul($other->numerator, $this->denominator);
     }
 
     /** Arrondi au plus proche, 0,5 vers le haut ; réservé aux valeurs positives ou nulles. */

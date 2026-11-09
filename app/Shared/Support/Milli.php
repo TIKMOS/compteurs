@@ -52,7 +52,7 @@ final class Milli
             throw new InvalidArgumentException('roundHalfUp attend une fraction positive.');
         }
 
-        return intdiv(2 * $numerator + $denominator, 2 * $denominator);
+        return intdiv(SafeInt::add(SafeInt::mul(2, $numerator), $denominator), SafeInt::mul(2, $denominator));
     }
 
     /** Fraction irréductible « a/b », ou « a » si b = 1. */

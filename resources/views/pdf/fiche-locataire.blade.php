@@ -72,7 +72,7 @@
     <p class="footer">
         Répartition des charges entre les occupants, établie avec {{ config('app.name') }} et clôturée le
         {{ $s->period->closed_at?->timezone(config('app.timezone'))->format('d/m/Y') }}.
-        Montants arrondis au franc CFA. Ce document n'est pas une facture.
+        Montants arrondis au franc CFA. Décompte de répartition des charges entre occupants.
     </p>
 </body>
 </html>

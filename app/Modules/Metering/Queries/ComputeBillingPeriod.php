@@ -25,6 +25,7 @@ use App\Shared\Enums\ReadingKind;
 use App\Shared\Enums\Utility;
 use App\Shared\Support\Fraction;
 use App\Shared\Support\Milli;
+use App\Shared\Support\ValueTooLargeException;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -163,7 +164,7 @@ final class ComputeBillingPeriod
                     $utility->unit(),
                     Milli::format(((int) $bill) * 1000),
                 );
-            } catch (IndexLowerThanPreviousException $e) {
+            } catch (IndexLowerThanPreviousException|ValueTooLargeException $e) {
                 $problems[] = Str::ucfirst($utility->label()) . ' : ' . $e->getMessage();
             }
         }
@@ -212,7 +213,7 @@ final class ComputeBillingPeriod
         foreach ($chain as $reading) {
             if (strcmp($reading->sortKey(), $startKey) <= 0) {
                 $start = $reading;
-            } elseif ($reading->readOn->lessThanOrEqualTo($period->monthEnd())) {
+            } elseif ($reading->readOn <= $period->monthEnd()) {
                 $inMonth[] = $reading;
             }
         }

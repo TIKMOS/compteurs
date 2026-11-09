@@ -20,6 +20,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property Utility $utility
  * @property int|null $total_amount FCFA TTC
  * @property string|null $main_consumption « 490.000 », information seulement
+ * @property int|null $utility_pricing_id tarification appliquée, figée à la clôture
+ * @property string|null $pricing_mode figé à la clôture
+ * @property string|null $fixed_unit_price « 127.50 » (cast decimal:2 : chaîne, jamais flottant)
+ * @property bool|null $cap_to_actual figé à la clôture
+ * @property string|null $total_consumption « 455.000 », Σ des décompteurs, figée à la clôture
+ * @property string|null $actual_unit_price fraction exacte « 1773/13 »
+ * @property string|null $unit_price fraction exacte du prix appliqué
+ * @property string|null $price_source figé à la clôture
  */
 #[Fillable(['main_meter_id', 'utility', 'total_amount', 'main_consumption'])]
 final class UtilityBill extends Model

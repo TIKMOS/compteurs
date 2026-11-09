@@ -120,7 +120,7 @@ final class HistoryXlsxController
             foreach ($byOccupancy as $occupancyId => $charges) {
                 $first = $charges->first();
                 $settlement = $period->creditSettlements->firstWhere('occupancy_id', $occupancyId);
-                $due = (int) $charges->sum('amount') - (int) ($settlement?->deducted_amount ?? 0);
+                $due = (int) $charges->sum('amount') - (int) ($settlement->deducted_amount ?? 0);
                 $paid = (int) Payment::query()->where('billing_period_id', $period->id)->where('occupancy_id', $occupancyId)->sum('amount');
                 $writer->addRow(Row::fromValuesWithStyles([
                     $period->month->format('Y-m'),
@@ -129,7 +129,7 @@ final class HistoryXlsxController
                     $due,
                     $paid,
                     max(0, $due - $paid),
-                    (int) ($settlement?->refund_due ?? 0),
+                    (int) ($settlement->refund_due ?? 0),
                 ], null, [3 => $fcfa, 4 => $fcfa, 5 => $fcfa, 6 => $fcfa]));
             }
         }

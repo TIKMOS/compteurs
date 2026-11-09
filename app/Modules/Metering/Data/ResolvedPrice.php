@@ -9,6 +9,7 @@ use App\Shared\Enums\PriceSource;
 use App\Shared\Enums\PricingMode;
 use App\Shared\Support\Fraction;
 use App\Shared\Support\Milli;
+use App\Shared\Support\SafeInt;
 
 /**
  * Prix d'un fluide pour un mois (EF-41 à EF-43) : prix réel (null sans facture ou si Σ = 0),
@@ -49,7 +50,7 @@ final readonly class ResolvedPrice
             return '—';
         }
 
-        $thousandths = Milli::roundHalfUp($price->numerator * 1000, $price->denominator);
+        $thousandths = Milli::roundHalfUp(SafeInt::mul($price->numerator, 1000), $price->denominator);
         $decimals = sprintf('%03d', $thousandths % 1000);
         $decimals = $fixedDecimals === null ? rtrim($decimals, '0') : substr($decimals, 0, $fixedDecimals);
 
@@ -58,14 +59,16 @@ final readonly class ResolvedPrice
 
     /**
      * Libellé d'EF-42 : « Prix appliqué : 127,50 FCFA/kWh — prix fixé (prix réel : 136,385) ».
+     * $forTenant : libellé des fiches, du portail et des messages destinés au locataire.
      */
-    public function label(string $unit): string
+    public function label(string $unit, bool $forTenant = false): string
     {
         // Un prix fixé s'affiche avec ses 2 décimales (« 127,50 »), un prix réel à 3 au plus (EF-27).
         $applied = self::format($this->applied, $this->source === PriceSource::Fixed ? 2 : null);
 
         if ($this->rule->mode === PricingMode::BillSplit) {
-            return "Prix unitaire : {$applied} FCFA/{$unit} — répartition de la facture";
+            // Côté locataire, jamais « facture » (ENF-15) : seul le propriétaire reçoit la facture SBEE / SONEB.
+            return "Prix unitaire : {$applied} FCFA/{$unit} — " . ($forTenant ? 'répartition des frais du compteur principal' : 'répartition de la facture');
         }
 
         if ($this->source === PriceSource::Actual) {

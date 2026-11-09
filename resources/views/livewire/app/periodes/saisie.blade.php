@@ -201,7 +201,8 @@ new class extends Component
 
         $this->validate([
             'replaceDate' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
-        ], [], ['replaceDate' => 'date du remplacement']);
+            'newSerial' => ['nullable', 'string', 'max:60'],
+        ], [], ['replaceDate' => 'date du remplacement', 'newSerial' => 'numéro de série']);
 
         $removal = FrenchDecimal::parse($this->removalIndex, 3);
         $install = FrenchDecimal::parse($this->newInstallIndex, 3);
@@ -454,7 +455,7 @@ new class extends Component
                                 <x-ui.input id="replace-date" label="Date du remplacement" type="date" wire:model="replaceDate" :error="$errors->first('replaceDate')" max="{{ now()->toDateString() }}" />
                                 <x-ui.input id="removal-index" label="Index de l'ancien à la dépose" inputmode="decimal" wire:model="removalIndex" :error="$errors->first('removalIndex')" />
                                 <x-ui.input id="new-index" label="Index du nouveau à la pose" inputmode="decimal" wire:model="newInstallIndex" :error="$errors->first('newInstallIndex')" hint="Souvent 0. Sert aussi pour un compteur remis à zéro." />
-                                <x-ui.input id="new-serial" label="Numéro de série du nouveau (facultatif)" wire:model="newSerial" />
+                                <x-ui.input id="new-serial" label="Numéro de série du nouveau (facultatif)" wire:model="newSerial" maxlength="60" :error="$errors->first('newSerial')" />
                                 <div class="flex gap-2">
                                     <x-ui.button type="submit" size="sm">Enregistrer le remplacement</x-ui.button>
                                     <x-ui.button variant="outline" size="sm" wire:click="cancelReplacement">Annuler</x-ui.button>

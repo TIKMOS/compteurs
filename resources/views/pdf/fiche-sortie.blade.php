@@ -76,7 +76,7 @@
         Le crédit de consommation appartient au locataire et ne passe jamais au locataire suivant.
         Le solde est établi à la clôture de {{ $x->period->label() }}
         ({{ $x->period->closed_at?->timezone(config('app.timezone'))->format('d/m/Y') }}), avec {{ config('app.name') }}.
-        Ce document n'est pas une facture.
+        Décompte de répartition des charges entre occupants.
     </p>
 
     <table style="margin-top: 22pt;">

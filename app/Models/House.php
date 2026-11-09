@@ -118,6 +118,9 @@ final class House extends Model
         return $closedOn !== null && $closedOn->addDays(7)->greaterThan($due) ? $closedOn->addDays(7) : $due;
     }
 
+    /**
+     * @return HasMany<BillingPeriod, $this>
+     */
     public function billingPeriods(): HasMany
     {
         return $this->hasMany(BillingPeriod::class);

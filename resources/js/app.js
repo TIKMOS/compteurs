@@ -11,6 +11,25 @@ registerOfflineIndex(Alpine);
 
 window.Alpine = Alpine;
 
+// Session expirée (419) pendant une saisie : message en français au lieu de celui de Livewire
+// (revue I-1). Une seule question, même si plusieurs requêtes échouent en même temps.
+let sessionExpired = false;
+Livewire.interceptRequest(({ onError }) => {
+    onError(({ response, preventDefault }) => {
+        if (response.status !== 419) {
+            return;
+        }
+        preventDefault();
+        if (sessionExpired) {
+            return;
+        }
+        sessionExpired = true;
+        if (window.confirm("La page a expiré : la dernière saisie n'a pas été enregistrée.\nRecharger la page ?")) {
+            window.location.reload();
+        }
+    });
+});
+
 Livewire.start();
 
 // ENF-04 : application installable et consultation hors ligne (public/sw.js).

@@ -11,6 +11,7 @@ use App\Modules\Metering\Exceptions\ZeroConsumptionException;
 use App\Shared\Enums\PriceSource;
 use App\Shared\Enums\PricingMode;
 use App\Shared\Support\Fraction;
+use App\Shared\Support\SafeInt;
 
 /**
  * Prix appliqué d'un fluide pour un mois (EF-26, EF-41, EF-43, EF-44, D-23). Classe pure.
@@ -31,7 +32,7 @@ final class UnitPriceResolver
     public function resolve(PricingRule $rule, ?int $bill, int $totalConsumption): ResolvedPrice
     {
         $actual = $bill !== null && $totalConsumption > 0
-            ? new Fraction($bill * 1000, $totalConsumption)
+            ? new Fraction(SafeInt::mul($bill, 1000), $totalConsumption)
             : null;
 
         if ($rule->requiresBill()) {

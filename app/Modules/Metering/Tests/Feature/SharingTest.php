@@ -76,7 +76,7 @@ test('EF-36 fiche : tranches avec index, prix appliqué, montants et total', fun
             'to' => "1\u{00A0}392 le 31/10 (fin de mois)",
             'consumption' => 142_000,
         ]])
-        ->and($s->utilities[0]['priceLabel'])->toBe('Prix unitaire : 133,333 FCFA/kWh — répartition de la facture')
+        ->and($s->utilities[0]['priceLabel'])->toBe('Prix unitaire : 133,333 FCFA/kWh — répartition des frais du compteur principal')
         ->and($s->utilities[0]['amount'])->toBe(18933)
         ->and($s->utilities[1]['amount'])->toBe(5400)
         ->and($s->total)->toBe(24333)

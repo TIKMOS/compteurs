@@ -1,0 +1,21 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+# Revue avant déploiement (docs/REVUE.md, I-6) : niveau 5 au minimum, lancé par `composer lint`.
+# ENF-14 vise le niveau 8 : à relever par étapes (M-5).
+parameters:
+    level: 5
+    paths:
+        - app/
+        - config/
+        - database/
+        - routes/
+    excludePaths:
+        - app/Modules/*/Tests/*
+    tmpDir: storage/framework/cache/phpstan
+    ignoreErrors:
+        # Ces traits sont utilisés par les composants Livewire monofichiers de
+        # resources/views/livewire (classes anonymes dans des vues Blade), que PHPStan n'analyse pas.
+        -
+            identifier: trait.unused
+            path: app/Modules/Metering/Livewire/Concerns/*

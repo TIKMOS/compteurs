@@ -71,7 +71,7 @@ final class BuildTenantStatement
 
             $utilities[] = [
                 'utility' => $utility,
-                'priceLabel' => ResolvedPrice::fromBill($bill)?->label($utility->unit()) ?? '',
+                'priceLabel' => ResolvedPrice::fromBill($bill)?->label($utility->unit(), forTenant: true) ?? '',
                 'segments' => array_map(fn ($s): array => [
                     'from' => self::describe($s->start),
                     'to' => self::describe($s->end),
