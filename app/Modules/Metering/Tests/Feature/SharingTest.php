@@ -94,7 +94,7 @@ test('EF-37 message court WhatsApp / SMS, au numéro du locataire s\'il est conn
         "Eau : 9 m³ = 5\u{00A0}400 FCFA",
         "Total : 24\u{00A0}333 FCFA",
     ]))
-        ->and($s->whatsappUrl())->toStartWith('https://wa.me/2290197000101?text=Participation%20aux%20frais')
+        ->and($s->whatsappUrl())->toStartWith('https://wa.me/2290197000101?text=Bonjour%20A.%20Houngb')
         ->and($s->smsUrl())->toStartWith('sms:+2290197000101?body=');
 
     $noPhone = app(BuildTenantStatement::class)->execute($october, $this->occ['Chambre 2']);

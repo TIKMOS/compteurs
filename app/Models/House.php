@@ -27,8 +27,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $user_id
  * @property string $name
  * @property string|null $address
+ * @property int $payment_due_day jour du mois suivant (1 à 28), H-76
  */
-#[Fillable(['name', 'address'])]
+#[Fillable(['name', 'address', 'payment_due_day'])]
 final class House extends Model
 {
     /** @use HasFactory<HouseFactory> */
@@ -105,6 +106,18 @@ final class House extends Model
     /**
      * @return HasMany<BillingPeriod, $this>
      */
+    /**
+     * Date limite de paiement d'un mois réparti (H-76) : le jour choisi du mois suivant ; si le mois
+     * est clôturé après cette date (ou trop près), 7 jours après la clôture.
+     */
+    public function paymentDueDate(BillingPeriod $period): CarbonImmutable
+    {
+        $due = $period->month->addMonthNoOverflow()->day((int) ($this->payment_due_day ?? 10));
+        $closedOn = $period->closed_at?->timezone(config('app.timezone'))->toImmutable()->startOfDay();
+
+        return $closedOn !== null && $closedOn->addDays(7)->greaterThan($due) ? $closedOn->addDays(7) : $due;
+    }
+
     public function billingPeriods(): HasMany
     {
         return $this->hasMany(BillingPeriod::class);

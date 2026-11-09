@@ -35,7 +35,7 @@ test('service worker : jamais de cache pour Livewire, les POST, les PDF, les pho
 
     expect($sw)->toContain("request.method !== 'GET'")
         ->toContain("url.pathname.startsWith('/livewire')")
-        ->toContain('\.pdf$|\.csv$|\/photo$')
+        ->toContain('\.pdf$|\.csv$|\.xlsx$|\/photo$')
         ->toContain("event.data === 'clear'")
         ->toContain("const OFFLINE_URL = '/hors-ligne'");
 });

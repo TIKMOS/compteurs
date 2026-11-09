@@ -18,6 +18,9 @@ new class extends Component
 
     public string $address = '';
 
+    /** Jour limite de paiement dans le mois suivant (H-76). */
+    public int $paymentDueDay = 10;
+
     /** @var array<string, string> */
     public array $references = ['electricity' => '', 'water' => ''];
 
@@ -27,6 +30,7 @@ new class extends Component
         $this->house = $house->load('mainMeters');
         $this->name = $house->name;
         $this->address = (string) $house->address;
+        $this->paymentDueDay = (int) ($house->payment_due_day ?? 10);
 
         foreach ($this->house->mainMeters as $meter) {
             $this->references[$meter->utility->value] = (string) $meter->provider_reference;
@@ -38,7 +42,7 @@ new class extends Component
         $this->authorize('update', $this->house);
         $this->validate();
 
-        app(UpdateHouse::class)->execute($this->house, $this->name, $this->address, $this->references);
+        app(UpdateHouse::class)->execute($this->house, $this->name, $this->address, $this->references, $this->paymentDueDay);
 
         session()->flash('status', 'Les informations de la maison sont enregistrées.');
         $this->redirectRoute('maisons.show', $this->house, navigate: true);
@@ -62,6 +66,7 @@ new class extends Component
             'address' => ['nullable', 'string', 'max:255'],
             'references.electricity' => ['nullable', 'string', 'max:60'],
             'references.water' => ['nullable', 'string', 'max:60'],
+            'paymentDueDay' => ['required', 'integer', 'between:1,28'],
         ];
     }
 
@@ -78,7 +83,7 @@ new class extends Component
      */
     protected function validationAttributes(): array
     {
-        return ['name' => 'nom de la maison', 'address' => 'adresse'];
+        return ['name' => 'nom de la maison', 'address' => 'adresse', 'paymentDueDay' => 'jour limite de paiement'];
     }
 };
 ?>
@@ -95,6 +100,10 @@ new class extends Component
             <x-ui.input id="address" label="Quartier, ville, repère (facultatif)" wire:model="address" :error="$errors->first('address')" />
             <x-ui.input id="ref-electricity" label="N° de compteur SBEE (électricité)" wire:model="references.electricity" :error="$errors->first('references.electricity')" />
             <x-ui.input id="ref-water" label="N° de police SONEB (eau)" wire:model="references.water" :error="$errors->first('references.water')" />
+            <div>
+                <x-ui.input id="payment-due-day" type="number" inputmode="numeric" min="1" max="28" label="Jour limite de paiement (dans le mois suivant)" wire:model="paymentDueDay" :error="$errors->first('paymentDueDay')" required />
+                <p class="mt-1 text-xs text-sand-600">Par exemple 10 : les participations d'octobre sont à payer avant le 10 novembre. Indiqué sur les fiches.</p>
+            </div>
         </x-ui.card>
 
         <x-ui.button type="submit" variant="primary" class="w-full sm:w-auto">Enregistrer</x-ui.button>

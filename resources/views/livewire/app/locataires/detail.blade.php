@@ -197,6 +197,18 @@ new class extends Component
                     @endif
                 </p>
             </a>
+            @if (! $occupancy->isCurrent())
+                @php
+                    $exitClosed = $occupancy->unit->house->billingPeriods()
+                        ->where('month', $occupancy->ended_on->startOfMonth()->toDateString())
+                        ->where('status', \App\Shared\Enums\PeriodStatus::Closed)->exists();
+                @endphp
+                @if ($exitClosed)
+                    <a href="{{ route('sorties.pdf', [$occupancy->unit->house, $occupancy->id]) }}" class="-mt-1 inline-block px-1 text-sm font-medium text-primary-700 hover:underline">Fiche de sortie (PDF)</a>
+                @else
+                    <p class="-mt-1 px-1 text-xs text-sand-600">Fiche de sortie disponible après la clôture de {{ $occupancy->ended_on->locale('fr')->isoFormat('MMMM YYYY') }}.</p>
+                @endif
+            @endif
         @empty
             <p class="text-sm text-sand-600">Aucun logement : enregistrez son entrée depuis la fiche d'un logement vacant.</p>
         @endforelse

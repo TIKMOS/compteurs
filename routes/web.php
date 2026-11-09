@@ -25,6 +25,10 @@ Route::middleware('throttle:60,1')->group(function (): void {
     Route::get('/locataire/{token}/fiche/{occupancy}/{mois}', [App\Modules\Metering\Http\Controllers\TenantPortalController::class, 'pdf'])
         ->name('tenant.portal.pdf')
         ->where(['token' => '[A-Za-z0-9]{48}', 'occupancy' => '\d+', 'mois' => '\d{4}-\d{2}']);
+    // Lien signé et temporaire envoyé par WhatsApp / SMS (7 jours).
+    Route::get('/fiche/{occupancy}/{mois}', App\Modules\Metering\Http\Controllers\SharedStatementController::class)
+        ->name('fiches.partage')
+        ->where(['occupancy' => '\d+', 'mois' => '\d{4}-\d{2}']);
     Route::get('/locataire/{token}/photo/{reading}', [App\Modules\Metering\Http\Controllers\ReadingPhotoController::class, 'tenant'])
         ->name('tenant.portal.photo')
         ->where(['token' => '[A-Za-z0-9]{48}', 'reading' => '\d+']);
@@ -68,6 +72,14 @@ Route::middleware(['auth', 'verified', 'terms'])->group(function (): void {
         ->name('periodes.statement')
         ->where(['mois' => '\d{4}-\d{2}', 'occupancy' => '\d+']);
 
+    // Documents de sortie : récapitulatif du mois (propriétaire), fiche de sortie d'un locataire.
+    Route::get('/maisons/{house}/periodes/{mois}/recapitulatif.pdf', App\Modules\Metering\Http\Controllers\MonthSummaryPdfController::class)
+        ->name('periodes.summary.pdf')
+        ->where('mois', '\d{4}-\d{2}');
+    Route::get('/maisons/{house}/sorties/{occupancy}/fiche', App\Modules\Metering\Http\Controllers\ExitStatementPdfController::class)
+        ->name('sorties.pdf')
+        ->where('occupancy', '\d+');
+
     // UC-18 : paiements, impayés, remboursements de crédit (lot 2, tranche 3).
     Route::livewire('/maisons/{house}/paiements', 'app.paiements.index')->name('paiements.index');
 
@@ -79,6 +91,7 @@ Route::middleware(['auth', 'verified', 'terms'])->group(function (): void {
     // Lot 2, tranche 4 : tableau de bord, export CSV, journal d'activité (H-58).
     Route::livewire('/maisons/{house}/tableau-de-bord', 'app.maisons.tableau-de-bord')->name('maisons.dashboard');
     Route::get('/maisons/{house}/historique.csv', App\Modules\Metering\Http\Controllers\HistoryCsvController::class)->name('maisons.export');
+    Route::get('/maisons/{house}/historique.xlsx', App\Modules\Metering\Http\Controllers\HistoryXlsxController::class)->name('maisons.export.xlsx');
     Route::livewire('/journal', 'app.journal.index')->name('journal.index');
 
     Route::livewire('/locataires', 'app.locataires.index')->name('locataires.index');

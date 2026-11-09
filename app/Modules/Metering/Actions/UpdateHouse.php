@@ -18,10 +18,13 @@ final class UpdateHouse
     /**
      * @param array<value-of<Utility>, string|null> $providerReferences
      */
-    public function execute(House $house, string $name, ?string $address, array $providerReferences): House
+    public function execute(House $house, string $name, ?string $address, array $providerReferences, ?int $paymentDueDay = null): House
     {
-        return DB::transaction(function () use ($house, $name, $address, $providerReferences): House {
+        return DB::transaction(function () use ($house, $name, $address, $providerReferences, $paymentDueDay): House {
             $house->update(['name' => trim($name), 'address' => filled($address) ? trim($address) : null]);
+            if ($paymentDueDay !== null) {
+                $house->update(['payment_due_day' => $paymentDueDay]);
+            }
 
             foreach ($house->mainMeters as $meter) {
                 $reference = $providerReferences[$meter->utility->value] ?? null;
@@ -30,6 +33,7 @@ final class UpdateHouse
 
             Journal::record('updated', "Maison « {$house->name} » modifiée", $house, [
                 'address' => $house->address,
+                'payment_due_day' => $house->payment_due_day,
                 'provider_references' => $providerReferences,
             ]);
 

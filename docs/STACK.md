@@ -270,7 +270,8 @@ de `Volt::route()`).
 | Besoin | Package conseillé |
 |---|---|
 | Export / import Excel ou CSV | Exports/Imports intégrés de **Filament 5** (rien à ajouter) |
-| PDF | `spatie/laravel-pdf` 2.14 (mode DomPDF, fonctionne sur le mutualisé sans Chrome) |
+| PDF | `spatie/laravel-pdf` 2.14 (mode DomPDF, fonctionne sur le mutualisé sans Chrome) — **installé** |
+| Excel (.xlsx) | `openspout/openspout` 4.x (PHP pur, extensions zip et xmlwriter) — **installé**, Filament n'étant pas utilisé |
 
 ### Point à vérifier avant de démarrer
 

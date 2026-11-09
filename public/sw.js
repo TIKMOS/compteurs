@@ -7,7 +7,7 @@
  * - Jamais de cache pour les requêtes Livewire, les POST, les PDF, les photos ni l'export.
  * - Message « clear » (déconnexion) : tout le cache est effacé (téléphone partagé).
  */
-const VERSION = 'compteurs-v1';
+const VERSION = 'compteurs-v2';
 const PAGES = `${VERSION}-pages`;
 const ASSETS = `${VERSION}-assets`;
 const OFFLINE_URL = '/hors-ligne';
@@ -32,7 +32,7 @@ self.addEventListener('message', (event) => {
 
 function isCacheablePage(url) {
     return /^\/(maisons|locataires|journal|locataire\/)/.test(url.pathname)
-        && !/(\.pdf$|\.csv$|\/photo$|\/fiches\/|\/fiche\/)/.test(url.pathname);
+        && !/(\.pdf$|\.csv$|\.xlsx$|\/photo$|\/fiches\/|\/fiche\/|\/fiche$)/.test(url.pathname);
 }
 
 self.addEventListener('fetch', (event) => {

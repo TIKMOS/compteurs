@@ -284,15 +284,22 @@ new class extends Component
                                 Reçu {{ $fcfa($paid) }}{{ $left > 0 ? ' · reste '.$fcfa($left) : '' }}
                                 · <a href="{{ route('paiements.index', $house) }}" wire:navigate class="underline">Paiements</a>
                             </p>
-                            {{-- EF-37 : partage en un clic. --}}
-                            <div class="mt-3 grid grid-cols-3 gap-2">
-                                <x-ui.button as="a" href="{{ $statement->whatsappUrl() }}" target="_blank" rel="noopener" variant="outline" size="sm">WhatsApp</x-ui.button>
+                                                        {{-- EF-37 : partage en un clic ; le message contient un lien signé vers la fiche PDF, valable 7 jours. --}}
+                            <x-ui.button as="a" href="{{ $statement->whatsappUrl() }}" target="_blank" rel="noopener" size="sm" class="mt-3 w-full">Partager par WhatsApp</x-ui.button>
+                            <div class="mt-2 grid grid-cols-2 gap-2">
                                 <x-ui.button as="a" href="{{ $statement->smsUrl() }}" variant="outline" size="sm">SMS</x-ui.button>
                                 <x-ui.button as="a" href="{{ route('periodes.statement', [$house, $mois, $tenant['occupancyId']]) }}" variant="outline" size="sm">Fiche PDF</x-ui.button>
                             </div>
+                            @if ($occ->ended_on && $occ->ended_on->format('Y-m') === $mois)
+                                <x-ui.button as="a" href="{{ route('sorties.pdf', [$house, $occ->id]) }}" variant="outline" size="sm" class="mt-2 w-full">Fiche de sortie (PDF)</x-ui.button>
+                            @endif
                         @endif
                     </div>
                 @endforeach
+
+                @if ($summary->period->isClosed())
+                    <x-ui.button as="a" href="{{ route('periodes.summary.pdf', [$house, $mois]) }}" variant="outline" size="sm" class="w-full">Récapitulatif du mois (PDF)</x-ui.button>
+                @endif
 
                 @if ($summary->creditRefunds > 0)
                     <p class="text-xs text-sand-600">Propriétaire — remboursement de crédit : {{ $fcfa($summary->creditRefunds) }}.</p>

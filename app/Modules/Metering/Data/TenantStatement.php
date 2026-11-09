@@ -8,8 +8,10 @@ use App\Models\BillingPeriod;
 use App\Models\House;
 use App\Models\Occupancy;
 use App\Models\Unit;
+use App\Shared\Support\FrenchNumber;
 use App\Shared\Support\Milli;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 /**
@@ -18,6 +20,9 @@ use Illuminate\Support\Str;
  */
 final readonly class TenantStatement
 {
+    /** Durée de validité du lien de partage de la fiche PDF. */
+    public const SHARE_DAYS = 7;
+
     /**
      * @param list<array{utility: \App\Shared\Enums\Utility, priceLabel: string, segments: list<array{from: string, to: string, consumption: int}>, raw: int, creditApplied: int, consumption: int, creditBalance: int, amount: int, estimated: bool, regularization: bool, estimationBasis: string|null, photoReadingIds: list<int>}> $utilities
      */
@@ -32,11 +37,72 @@ final readonly class TenantStatement
         public int $total,
         public ?int $creditRefunded,
         public ?int $refundDue,
+        public int $paid = 0,
+        public ?CarbonImmutable $dueDate = null,
     ) {}
+
+    /**
+     * « dix-neuf mille trois cent un francs CFA ».
+     */
+    public static function inWords(int $amount): string
+    {
+        return FrenchNumber::toWords($amount) . ' franc' . (abs($amount) > 1 ? 's' : '') . ' CFA';
+    }
 
     public static function fcfa(int $amount): string
     {
         return Milli::format($amount * 1000) . ' FCFA';
+    }
+
+    /**
+     * Reste à payer à la date de génération (jamais négatif).
+     */
+    public function remaining(): int
+    {
+        return max(0, $this->net() - $this->paid);
+    }
+
+    /**
+     * Lien signé et temporaire vers la fiche PDF, ouvrable sans compte (7 jours).
+     */
+    public function sharedPdfUrl(): string
+    {
+        return URL::temporarySignedRoute('fiches.partage', CarbonImmutable::now()->addDays(self::SHARE_DAYS), [
+            'occupancy' => $this->occupancy->id,
+            'mois' => $this->period->month->format('Y-m'),
+        ]);
+    }
+
+    /**
+     * Message WhatsApp : montant, reste à payer, date limite et lien vers la fiche PDF.
+     */
+    public function whatsappMessage(): string
+    {
+        $lines = [
+            'Bonjour ' . $this->occupancy->tenant->name . ',',
+            sprintf(
+                "Votre participation aux frais d'eau et d'électricité %s (%s, %s) : %s.",
+                (preg_match('/^[aeiouéh]/iu', $this->monthLabel()) ? "d'" : 'de ') . $this->monthLabel(),
+                $this->unit->label,
+                $this->house->name,
+                self::fcfa($this->net()),
+            ),
+        ];
+        if ($this->paid > 0) {
+            $lines[] = 'Déjà payé : ' . self::fcfa($this->paid) . '.';
+        }
+        if ($this->remaining() > 0) {
+            $lines[] = 'Reste à payer : ' . self::fcfa($this->remaining()) . ($this->dueDate ? ', avant le ' . $this->dueDate->format('d/m/Y') : '') . '.';
+        } else {
+            $lines[] = 'Rien à payer pour ce mois. Merci.';
+        }
+        if ($this->refundDue > 0) {
+            $lines[] = 'À vous rembourser : ' . self::fcfa($this->refundDue) . '.';
+        }
+        $lines[] = 'Fiche détaillée (PDF, lien valable ' . self::SHARE_DAYS . ' jours) : ' . $this->sharedPdfUrl();
+
+        return implode('
+', $lines);
     }
 
     public function net(): int
@@ -101,11 +167,12 @@ final readonly class TenantStatement
     {
         $phone = $this->occupancy->tenant->phone;
 
-        return 'https://wa.me/' . ($phone === null ? '' : ltrim($phone, '+')) . '?text=' . rawurlencode($this->shortText());
+        return 'https://wa.me/' . ($phone === null ? '' : ltrim($phone, '+')) . '?text=' . rawurlencode($this->whatsappMessage());
     }
 
     public function smsUrl(): string
     {
-        return 'sms:' . ($this->occupancy->tenant->phone ?? '') . '?body=' . rawurlencode($this->shortText());
+        return 'sms:' . ($this->occupancy->tenant->phone ?? '') . '?body=' . rawurlencode($this->shortText() . '
+Fiche : ' . $this->sharedPdfUrl());
     }
 }

@@ -110,6 +110,8 @@ final class BuildTenantStatement
             array_sum(array_column($utilities, 'amount')),
             $settlement?->deducted_amount,
             $settlement?->refund_due,
+            TenantBalance::paid($occupancy, $period),
+            $period->house->paymentDueDate($period),
         );
     }
 

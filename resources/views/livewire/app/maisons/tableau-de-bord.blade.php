@@ -129,9 +129,20 @@ new class extends Component
         @endforelse
     </x-ui.card>
 
-    <div class="flex flex-wrap gap-2">
-        <x-ui.button as="a" href="{{ route('maisons.export', $house) }}" variant="outline" size="sm">Exporter l'historique (CSV)</x-ui.button>
-    </div>
+    {{-- Export Excel sur une période choisie (mois clôturés) ; CSV complet en secours. --}}
+    <x-ui.card class="space-y-3">
+        <h2 class="text-base font-semibold text-sand-900">Exporter l'historique</h2>
+        <form method="GET" action="{{ route('maisons.export.xlsx', $house) }}" class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+                <x-ui.input id="export-du" name="du" type="month" label="Du mois" value="{{ now()->subMonths(11)->format('Y-m') }}" required />
+                <x-ui.input id="export-au" name="au" type="month" label="Au mois" value="{{ now()->format('Y-m') }}" required />
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <x-ui.button type="submit" size="sm">Télécharger (Excel)</x-ui.button>
+                <x-ui.button as="a" href="{{ route('maisons.export', $house) }}" variant="outline" size="sm">Tout l'historique (CSV)</x-ui.button>
+            </div>
+        </form>
+    </x-ui.card>
 
     @forelse ($this->months as $row)
         <x-ui.card class="space-y-3" wire:key="month-{{ $row['period']->id }}">
