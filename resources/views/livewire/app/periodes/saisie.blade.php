@@ -328,12 +328,12 @@ new class extends Component
     <div>
         <a href="{{ route('maisons.show', $house) }}" wire:navigate class="text-sm text-primary-700 hover:underline">← {{ $house->name }}</a>
         <div class="mt-2 flex items-center justify-between gap-2">
-            <a href="{{ route('periodes.show', [$house, $prev->format('Y-m')]) }}" wire:navigate class="px-2 py-2 text-sand-500 hover:text-sand-900" aria-label="Mois précédent">‹</a>
+            <a href="{{ route('periodes.show', [$house, $prev->format('Y-m')]) }}" wire:navigate class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-sand-200 bg-white text-xl text-sand-700 hover:bg-sand-50 hover:text-sand-900" aria-label="Mois précédent" title="Mois précédent">‹</a>
             <h1 class="text-2xl font-bold text-sand-900 text-center">{{ \Illuminate\Support\Str::ucfirst($this->month->locale('fr')->isoFormat('MMMM YYYY')) }}</h1>
             @if ($next->lessThanOrEqualTo(now()->startOfMonth()))
-                <a href="{{ route('periodes.show', [$house, $next->format('Y-m')]) }}" wire:navigate class="px-2 py-2 text-sand-500 hover:text-sand-900" aria-label="Mois suivant">›</a>
+                <a href="{{ route('periodes.show', [$house, $next->format('Y-m')]) }}" wire:navigate class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-sand-200 bg-white text-xl text-sand-700 hover:bg-sand-50 hover:text-sand-900" aria-label="Mois suivant" title="Mois suivant">›</a>
             @else
-                <span class="px-2 py-2 text-sand-200" aria-hidden="true">›</span>
+                <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center text-xl text-sand-200" aria-hidden="true">›</span>
             @endif
         </div>
         <div class="mt-2 flex flex-wrap items-center justify-center gap-2 text-sm">
@@ -462,7 +462,7 @@ new class extends Component
                                 </div>
                             </form>
                         @else
-                            <button type="button" wire:click="startReplacement({{ $id }})" class="text-xs font-medium text-primary-700 hover:underline">
+                            <button type="button" wire:click="startReplacement({{ $id }})" class="-my-2 inline-flex min-h-11 items-center py-2 text-sm font-medium text-primary-700 hover:underline">
                                 Décompteur changé ou remis à zéro ?
                             </button>
                         @endif

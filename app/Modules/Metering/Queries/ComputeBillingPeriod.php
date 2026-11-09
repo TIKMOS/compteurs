@@ -206,7 +206,7 @@ final class ComputeBillingPeriod
     private function readingsOfMonth(SubMeter $meter, BillingPeriod $period): array
     {
         $startKey = (new Reading(ReadingKind::Initial, $period->month, 0))->sortKey();
-        $chain = $meter->readingChain();
+        $chain = $meter->readingChain(fromLoaded: true);
         $start = $chain[0];
         $inMonth = [];
 

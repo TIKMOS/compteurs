@@ -97,13 +97,12 @@ new class extends Component
             return [];
         }
 
-        $statements = [];
-        foreach ($this->summary->tenants as $tenant) {
-            $occupancy = \App\Models\Occupancy::query()->with(['tenant', 'unit'])->find($tenant['occupancyId']);
-            $statements[$tenant['occupancyId']] = app(\App\Modules\Metering\Queries\BuildTenantStatement::class)->execute($period, $occupancy);
-        }
+        // Toutes les fiches du mois en une fois (revue M-6), dans l'ordre du récapitulatif.
+        $ids = array_column($this->summary->tenants, 'occupancyId');
+        $occupancies = \App\Models\Occupancy::query()->whereIn('id', $ids)->get();
+        $built = app(\App\Modules\Metering\Queries\BuildTenantStatement::class)->executeMany($period, $occupancies);
 
-        return $statements;
+        return array_intersect_key(array_replace(array_flip($ids), $built), $built);
     }
 
     /**
@@ -273,8 +272,9 @@ new class extends Component
                         @if ($statement)
                             @php
                                 $occ = $statement->occupancy;
-                                $paid = \App\Modules\Metering\Queries\TenantBalance::paid($occ, $summary->period);
-                                $left = \App\Modules\Metering\Queries\TenantBalance::due($occ, $summary->period) - $paid;
+                                // Payé et dû viennent de la fiche, déjà chargée (revue M-6).
+                                $paid = $statement->paid;
+                                $left = $statement->net() - $paid;
                             @endphp
                             @php
                                 $payStatus = \App\Shared\Enums\PaymentStatus::for($paid + $left, $paid);

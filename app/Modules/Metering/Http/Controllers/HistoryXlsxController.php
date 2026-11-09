@@ -115,13 +115,19 @@ final class HistoryXlsxController
         // Feuille 3 : encaissements par locataire et par mois.
         $writer->addNewSheetAndMakeItCurrent()->setName('Encaissements');
         $writer->addRow(Row::fromValues(['Mois', 'Logement', 'Locataire', 'Dû (FCFA)', 'Payé (FCFA)', 'Reste (FCFA)', 'À rembourser (FCFA)'], $bold));
+        // Tous les paiements de la période exportée en une requête (revue M-6).
+        $paidBy = Payment::query()
+            ->whereIn('billing_period_id', $periods->pluck('id')->all())
+            ->get(['billing_period_id', 'occupancy_id', 'amount'])
+            ->groupBy(fn (Payment $p): string => $p->billing_period_id . '|' . $p->occupancy_id)
+            ->map(fn ($payments): int => (int) $payments->sum('amount'));
         foreach ($periods as $period) {
             $byOccupancy = $period->bills->flatMap->charges->whereNotNull('occupancy_id')->groupBy('occupancy_id');
             foreach ($byOccupancy as $occupancyId => $charges) {
                 $first = $charges->first();
                 $settlement = $period->creditSettlements->firstWhere('occupancy_id', $occupancyId);
                 $due = (int) $charges->sum('amount') - (int) ($settlement->deducted_amount ?? 0);
-                $paid = (int) Payment::query()->where('billing_period_id', $period->id)->where('occupancy_id', $occupancyId)->sum('amount');
+                $paid = (int) ($paidBy[$period->id . '|' . $occupancyId] ?? 0);
                 $writer->addRow(Row::fromValuesWithStyles([
                     $period->month->format('Y-m'),
                     $first->unit->label,

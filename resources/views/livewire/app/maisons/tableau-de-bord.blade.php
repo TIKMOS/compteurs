@@ -133,7 +133,7 @@ new class extends Component
     <x-ui.card class="space-y-3">
         <h2 class="text-base font-semibold text-sand-900">Exporter l'historique</h2>
         <form method="GET" action="{{ route('maisons.export.xlsx', $house) }}" class="space-y-3">
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
                 <x-ui.input id="export-du" name="du" type="month" label="Du mois" value="{{ now()->subMonths(11)->format('Y-m') }}" required />
                 <x-ui.input id="export-au" name="au" type="month" label="Au mois" value="{{ now()->format('Y-m') }}" required />
             </div>

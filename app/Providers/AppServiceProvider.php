@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Number;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 final class AppServiceProvider extends ServiceProvider
 {
@@ -37,5 +38,12 @@ final class AppServiceProvider extends ServiceProvider
 
         // Production : toutes les URL générées (liens signés WhatsApp, emails) en https://.
         URL::forceHttps($this->app->isProduction());
+
+        // Mots de passe (revue M-1) : 8 caractères au moins, sans règle de composition imposée
+        // (recommandation NIST 800-63B) ; en production, refus des mots de passe déjà divulgués
+        // (service « Have I Been Pwned », seuls les 5 premiers caractères du hachage SHA-1 sont envoyés).
+        Password::defaults(fn (): Password => $this->app->isProduction()
+            ? Password::min(8)->max(255)->uncompromised()
+            : Password::min(8)->max(255));
     }
 }

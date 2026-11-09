@@ -30,6 +30,8 @@
             type="password"
             name="password"
             :error="$errors->first('password')"
+            hint="8 caractères au moins. Une phrase facile à retenir vaut mieux qu'un mot compliqué."
+            minlength="8"
             required
             autocomplete="new-password"
         />

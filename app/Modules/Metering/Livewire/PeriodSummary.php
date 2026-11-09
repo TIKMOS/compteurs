@@ -87,6 +87,13 @@ final readonly class PeriodSummary
         $period->loadMissing(['bills.charges.unit', 'bills.charges.occupancy.tenant', 'creditSettlements']);
         $utilities = [];
 
+        // Crédits restants de tous les logements du mois, en une requête (revue M-6).
+        $credits = ConsumptionCredit::query()
+            ->whereIn('unit_id', $period->bills->flatMap->charges->pluck('unit_id')->unique()->all())
+            ->with('movements')
+            ->get()
+            ->groupBy(fn (ConsumptionCredit $c): string => $c->unit_id . '|' . $c->utility->value . '|' . ($c->occupancy_id ?? ''));
+
         foreach (Utility::cases() as $utility) {
             $bill = $period->bill($utility);
             if ($bill === null || $bill->unit_price === null) {
@@ -104,7 +111,8 @@ final readonly class PeriodSummary
                     'payer' => $charge->occupancy?->tenant->name ?? 'Propriétaire / vacant',
                     'consumption' => Milli::fromDecimal($charge->consumption),
                     'creditApplied' => Milli::fromDecimal($charge->credit_applied),
-                    'creditBalance' => self::currentCredit($charge, $utility),
+                    'creditBalance' => (int) $credits->get($charge->unit_id . '|' . $utility->value . '|' . ($charge->occupancy_id ?? ''), collect())
+                        ->sum(fn (ConsumptionCredit $lot): int => $lot->remaining()),
                     'amount' => $charge->amount,
                     'estimated' => $charge->is_estimated,
                     'regularization' => $charge->includes_regularization,
@@ -197,14 +205,4 @@ final readonly class PeriodSummary
     /**
      * Crédit restant aujourd'hui d'un payeur, pour un logement et un fluide.
      */
-    private static function currentCredit(Charge $charge, Utility $utility): int
-    {
-        return ConsumptionCredit::query()
-            ->where('unit_id', $charge->unit_id)
-            ->where('utility', $utility)
-            ->where('occupancy_id', $charge->occupancy_id)
-            ->with('movements')
-            ->get()
-            ->sum(fn (ConsumptionCredit $lot): int => $lot->remaining());
-    }
 }

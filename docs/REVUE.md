@@ -183,3 +183,19 @@ Point non vérifié dans un navigateur : la question en français en cas de sess
 Laravel 13 accepte les requêtes Livewire venant du même site grâce à l'en-tête `Sec-Fetch-Site` que le
 navigateur ajoute : un 419 n'arrive donc qu'avec un navigateur ancien qui ne l'envoie pas, et Edge
 n'a pas permis de le simuler. Le code suit l'API `Livewire.interceptRequest` de Livewire 4.
+
+## Suivi des mineurs (10 novembre 2026)
+
+| # | Statut | Ce qui a été fait |
+|---|---|---|
+| M-1 | Corrigé | `Password::defaults()` : 8 caractères au moins, sans règle de composition (NIST 800-63B) ; en production, refus des mots de passe divulgués (« Have I Been Pwned », k-anonymat). Règle affichée à l'inscription et au changement de mot de passe. Tests dans `AuthSecurityTest`. |
+| M-2 | Corrigé | Clé de limitation : numéro normalisé (`BeninPhone::normalize`) ; + 20 essais par minute par adresse IP, tous comptes confondus. Tests dans `AuthSecurityTest`. |
+| M-3 | Corrigé | (pendant la revue) |
+| M-4 | Corrigé | (pendant la revue) |
+| M-5 | En cours | PHPStan niveau 8 : tranche suivante. |
+| M-6 | Corrigé | `BuildTenantStatement::executeMany()` (fiches d'un mois en une fois), crédits groupés dans `PeriodSummary`, paiements groupés dans l'export Excel. Résultat du mois : 99 → 35 requêtes ; export Excel : 19 → 9. |
+| M-7 | Corrigé | `SubMeter::readingChain(fromLoaded: true)` dans les affichages en lecture seule (les actions relisent toujours la base). Saisie : 16 → 9 requêtes ; tableau de bord : 32 → 25. `QueryCountTest` interdit toute requête répétée plus de deux fois sur ces pages. |
+| M-8 | À mesurer | Temps des PDF à mesurer sur Hostinger après la mise en ligne (rien à corriger en local). |
+| M-9 | Corrigé | Champs de l'export l'un sous l'autre sous 400 px. |
+| M-10 | Corrigé | Flèches de mois et lien de remplacement : zones tactiles de 44 px. |
+| M-11 | Corrigé | 5 impayés affichés, les autres repliés (« Voir les 6 autres impayés »), sans JavaScript. Tests dans `MobileLayoutTest`. |

@@ -86,11 +86,15 @@ final class SubMeter extends Model
      *
      * @return list<Reading>
      */
-    public function readingChain(?int $exceptReadingId = null): array
+    public function readingChain(?int $exceptReadingId = null, bool $fromLoaded = false): array
     {
         $chain = [new Reading(ReadingKind::Installation, $this->installed_on, Milli::fromDecimal($this->install_index))];
 
-        $readings = $this->readings()->when($exceptReadingId !== null, fn ($q) => $q->whereKeyNot($exceptReadingId))->get();
+        // $fromLoaded : relevés déjà chargés par l'appelant juste avant (affichages en lecture seule,
+        // revue M-7) ; les actions qui valident une saisie relisent toujours la base.
+        $readings = $fromLoaded && $this->relationLoaded('readings')
+            ? $this->readings->when($exceptReadingId !== null, fn ($c) => $c->reject(fn (MeterReading $r): bool => $r->id === $exceptReadingId))
+            : $this->readings()->when($exceptReadingId !== null, fn ($q) => $q->whereKeyNot($exceptReadingId))->get();
 
         foreach ($readings as $reading) {
             $chain[] = $reading->toReading();

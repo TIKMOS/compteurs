@@ -52,10 +52,17 @@ final class FortifyServiceProvider extends ServiceProvider
                 : null;
         });
 
-        RateLimiter::for('login', static function (Request $request): Limit {
-            $throttleKey = Str::transliterate(Str::lower((string) $request->input(Fortify::username())) . '|' . $request->ip());
+        // 5 essais par minute pour un même compte depuis une même adresse IP. Le numéro est normalisé
+        // (revue M-2) : « 01 97 00 00 00 » et « +229 0197000000 » comptent comme le même compte.
+        // Et 20 essais par minute par adresse IP, tous comptes confondus (essais en série).
+        RateLimiter::for('login', static function (Request $request): array {
+            $login = trim((string) $request->input(Fortify::username()));
+            $account = str_contains($login, '@') ? Str::lower($login) : (BeninPhone::normalize($login) ?? Str::lower($login));
 
-            return Limit::perMinute(5)->by($throttleKey);
+            return [
+                Limit::perMinute(5)->by('compte|' . Str::transliterate($account) . '|' . $request->ip()),
+                Limit::perMinute(20)->by('ip|' . $request->ip()),
+            ];
         });
     }
 }

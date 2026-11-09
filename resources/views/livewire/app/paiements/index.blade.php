@@ -186,23 +186,32 @@ new class extends Component
         </x-ui.card>
     @endif
 
-    {{-- Liste des impayés de la maison : statut partiel ou impayé. --}}
+    {{-- Liste des impayés de la maison : statut partiel ou impayé. Sur téléphone, les 5 premiers
+         seulement, le reste replié (revue M-11) : le détail par locataire suit juste en dessous. --}}
+    @php
+        $unpaidFirst = array_slice($b['unpaid'], 0, 5);
+        $unpaidRest = array_slice($b['unpaid'], 5);
+    @endphp
     <x-ui.card class="space-y-3">
-        <h2 class="text-base font-semibold text-sand-900">Impayés</h2>
-        @forelse ($b['unpaid'] as $row)
-            <div class="flex items-center justify-between gap-3 text-sm" wire:key="unpaid-{{ $row['occupancy']->id }}-{{ $row['period']->id }}">
-                <div class="min-w-0">
-                    <p class="font-medium text-sand-900 truncate">{{ $row['occupancy']->unit->label }} — {{ $row['occupancy']->tenant->name }}</p>
-                    <p class="text-xs text-sand-600">
-                        {{ \Illuminate\Support\Str::ucfirst($row['period']->label()) }} · reste {{ $fcfa($row['remaining']) }}
-                        @if ($row['paid'] > 0) (reçu {{ $fcfa($row['paid']) }}) @endif
-                    </p>
-                </div>
-                <x-ui.badge :tone="$row['status']->tone()" size="sm">{{ $row['status']->label() }}</x-ui.badge>
-            </div>
+        <h2 class="text-base font-semibold text-sand-900">Impayés @if ($b['unpaid'] !== [])<span class="text-sm font-normal text-sand-600">({{ count($b['unpaid']) }})</span>@endif</h2>
+        @forelse ($unpaidFirst as $row)
+            <x-ligne-impaye :row="$row" :fcfa="$fcfa" />
         @empty
             <p class="text-sm text-success" role="status">Aucun impayé : toutes les répartitions clôturées sont payées.</p>
         @endforelse
+        @if ($unpaidRest !== [])
+            <details class="group">
+                <summary class="inline-flex min-h-11 cursor-pointer items-center text-sm font-medium text-primary-700 hover:underline">
+                    <span class="group-open:hidden">Voir {{ count($unpaidRest) === 1 ? 'l\'autre impayé' : 'les '.count($unpaidRest).' autres impayés' }}</span>
+                    <span class="hidden group-open:inline">Replier</span>
+                </summary>
+                <div class="mt-2 space-y-3">
+                    @foreach ($unpaidRest as $row)
+                        <x-ligne-impaye :row="$row" :fcfa="$fcfa" />
+                    @endforeach
+                </div>
+            </details>
+        @endif
     </x-ui.card>
 
     <h2 class="pt-2 text-base font-semibold text-sand-900">Détail par locataire</h2>

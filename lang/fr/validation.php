@@ -120,7 +120,7 @@ return [
         'mixed' => 'Le champ :attribute doit contenir au moins une majuscule et une minuscule.',
         'numbers' => 'Le champ :attribute doit contenir au moins un chiffre.',
         'symbols' => 'Le champ :attribute doit contenir au moins un symbole.',
-        'uncompromised' => 'La valeur du champ :attribute est apparue dans une fuite de données. Veuillez choisir une valeur différente.',
+        'uncompromised' => 'Ce mot de passe figure dans une fuite de données connue : choisissez-en un autre.',
     ],
     'present' => 'Le champ :attribute doit être présent.',
     'present_if' => 'Le champ :attribute doit être présent quand :other a la valeur :value.',

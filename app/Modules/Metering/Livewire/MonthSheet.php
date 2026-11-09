@@ -82,7 +82,7 @@ final readonly class MonthSheet
             fn (MeterReading $r): bool => $r->billing_period_id === $period->id && $r->kind === ReadingKind::MonthEnd,
         );
 
-        $chain = $meter->readingChain($monthEndReading?->id);
+        $chain = $meter->readingChain($monthEndReading?->id, fromLoaded: true);
         $start = $chain[0];
         $events = [];
         foreach ($chain as $reading) {
