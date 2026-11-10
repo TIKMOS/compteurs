@@ -49,7 +49,7 @@ final class SendReadingReminders extends Command
             }
         });
 
-        $this->info("{$sent} rappel(s) envoyé(s) pour " . $month->locale('fr')->isoFormat('MMMM YYYY') . '.');
+        $this->info("{$sent} rappel(s) envoyé(s) pour " . $month->settings(['locale' => 'fr'])->isoFormat('MMMM YYYY') . '.');
 
         return self::SUCCESS;
     }

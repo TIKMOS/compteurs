@@ -25,6 +25,8 @@ use LogicException;
  * @property string $notice_text
  * @property CarbonImmutable $acknowledged_at
  * @property string|null $ip_address
+ * @property-read User $user
+ * @property-read UtilityPricing $pricing
  */
 #[Fillable(['user_id', 'house_id', 'utility_pricing_id', 'utility', 'kind', 'notice_text', 'acknowledged_at', 'ip_address'])]
 final class ComplianceAcknowledgement extends Model

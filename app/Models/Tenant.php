@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $user_id
  * @property string $name
  * @property string|null $phone « +2290197000000 »
+ * @property-read User $owner
  */
 #[Fillable(['name', 'phone'])]
 final class Tenant extends Model

@@ -35,7 +35,7 @@ final class MonthEndReadingsReminder extends Notification
 
     public function toMail(User $notifiable): MailMessage
     {
-        $label = $this->month->locale('fr')->isoFormat('MMMM YYYY');
+        $label = $this->month->settings(['locale' => 'fr'])->isoFormat('MMMM YYYY');
 
         $mail = (new MailMessage)
             ->subject(($this->isFollowUp ? 'Relevés manquants : ' : 'Relevés de fin de mois : ') . $label)

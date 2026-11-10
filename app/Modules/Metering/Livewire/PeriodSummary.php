@@ -12,6 +12,7 @@ use App\Modules\Metering\Data\ResolvedPrice;
 use App\Shared\Enums\PricingMode;
 use App\Shared\Enums\Utility;
 use App\Shared\Support\Milli;
+use LogicException;
 
 /**
  * Récapitulatif d'un mois pour l'écran de résultat (UC-13, EF-36, EF-42, EF-43) : calcul en
@@ -59,7 +60,7 @@ final readonly class PeriodSummary
 
             $utilities[] = self::utilityBlock(
                 $utility,
-                $allocation->price,
+                $allocation->price ?? throw new LogicException('Prix non résolu.'),
                 $computation->bills[$utilityValue],
                 $period->bill($utility)?->main_consumption,
                 $allocation->result->totalConsumption,
@@ -101,6 +102,9 @@ final readonly class PeriodSummary
             }
 
             $price = ResolvedPrice::fromBill($bill);
+            if ($price === null) {
+                continue;
+            }
 
             $charges = $bill->charges->sortBy(fn (Charge $c): string => mb_strtolower($c->unit->label) . '|' . ($c->occupancy?->started_on->toDateString() ?? '9'), SORT_NATURAL);
             $lines = [];
@@ -124,7 +128,7 @@ final readonly class PeriodSummary
                 $price,
                 $bill->total_amount,
                 $bill->main_consumption,
-                Milli::fromDecimal($bill->total_consumption),
+                Milli::fromDecimal($bill->total_consumption ?? '0'),
                 $lines,
             );
         }

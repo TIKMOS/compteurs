@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $house_id
  * @property Utility $utility
  * @property string|null $provider_reference
+ * @property-read House $house (archivé compris)
  */
 #[Fillable(['utility', 'provider_reference'])]
 final class MainMeter extends Model
@@ -25,7 +26,8 @@ final class MainMeter extends Model
      */
     public function house(): BelongsTo
     {
-        return $this->belongsTo(House::class);
+        // Le vrai parent, même archivé : les écrans qui doivent l'ignorer filtrent deleted_at.
+        return $this->belongsTo(House::class)->withTrashed();
     }
 
     public function providerName(): string

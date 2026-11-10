@@ -25,7 +25,8 @@ final class BuildExitStatement
 {
     public function execute(Occupancy $occupancy): ?ExitStatement
     {
-        if ($occupancy->ended_on === null) {
+        $endedOn = $occupancy->ended_on;
+        if ($endedOn === null) {
             return null;
         }
 
@@ -34,13 +35,13 @@ final class BuildExitStatement
 
         $period = BillingPeriod::query()
             ->where('house_id', $house->id)
-            ->where('month', $occupancy->ended_on->startOfMonth()->toDateString())
+            ->where('month', $endedOn->startOfMonth()->toDateString())
             ->first();
         if ($period === null || ! $period->isClosed()) {
             return null;
         }
 
-        $readings = MeterReading::query()
+        $readings = array_values(MeterReading::query()
             ->where('occupancy_id', $occupancy->id)
             ->where('kind', ReadingKind::Exit)
             ->with('subMeter')
@@ -52,10 +53,9 @@ final class BuildExitStatement
                 'readOn' => $r->read_on,
                 'estimated' => $r->is_estimated,
             ])
-            ->values()
-            ->all();
+            ->all());
 
-        $lots = CreditMovement::query()
+        $lots = array_values(CreditMovement::query()
             ->where('billing_period_id', $period->id)
             ->where('kind', CreditMovementKind::Settled)
             ->whereHas('credit', fn ($q) => $q->where('occupancy_id', $occupancy->id))
@@ -68,8 +68,7 @@ final class BuildExitStatement
                 'origin' => $m->credit->originPeriod->label(),
                 'value' => ResolvedPrice::format(Fraction::parse((string) $m->value)),
             ])
-            ->values()
-            ->all();
+            ->all());
 
         $settlement = $period->creditSettlements()->where('occupancy_id', $occupancy->id)->first();
 

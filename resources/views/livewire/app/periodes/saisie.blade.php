@@ -294,7 +294,7 @@ new class extends Component
 
         return SubMeter::query()
             ->whereKey($id)
-            ->whereHas('unit', fn ($q) => $q->where('house_id', $this->house->id))
+            ->whereHas('unit', fn ($q) => $q->whereNull('deleted_at')->where('house_id', $this->house->id))
             ->firstOrFail();
     }
 

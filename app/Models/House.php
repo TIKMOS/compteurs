@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use LogicException;
 
 /**
  * Maison d'un propriétaire (EF-01) : deux compteurs principaux et, par fluide,
@@ -28,6 +29,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $name
  * @property string|null $address
  * @property int $payment_due_day jour du mois suivant (1 à 28), H-76
+ * @property-read User $owner
  */
 #[Fillable(['name', 'address', 'payment_due_day'])]
 final class House extends Model
@@ -81,6 +83,14 @@ final class House extends Model
     public function mainMeter(Utility $utility): ?MainMeter
     {
         return $this->mainMeters->firstWhere('utility', $utility);
+    }
+
+    /**
+     * Compteur principal d'un fluide : toujours créé avec la maison (CreateHouse).
+     */
+    public function requireMainMeter(Utility $utility): MainMeter
+    {
+        return $this->mainMeter($utility) ?? throw new LogicException("Compteur principal {$utility->value} absent de la maison {$this->id}.");
     }
 
     /**

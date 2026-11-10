@@ -52,7 +52,7 @@ final class MonthSummaryPdfController
 
         $payments = [];
         foreach ($summary->tenants as $tenant) {
-            $occupancy = Occupancy::query()->find($tenant['occupancyId']);
+            $occupancy = Occupancy::query()->whereKey($tenant['occupancyId'])->firstOrFail();
             $paid = TenantBalance::paid($occupancy, $period);
             $payments[] = [
                 'unit' => $tenant['unitLabel'],

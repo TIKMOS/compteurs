@@ -86,7 +86,7 @@ final class TenantPortalController
             $periods = BillingPeriod::query()
                 ->whereIn('id', $periodIds)
                 ->where('status', PeriodStatus::Closed)
-                ->whereHas('house')
+                ->whereHas('house', fn ($q) => $q->whereNull('deleted_at'))
                 ->get();
 
             foreach ($periods as $period) {
@@ -103,10 +103,10 @@ final class TenantPortalController
     private function closedPeriodFor(Occupancy $occupancy, string $mois): ?BillingPeriod
     {
         return BillingPeriod::query()
-            ->where('house_id', $occupancy->unit?->house_id)
+            ->where('house_id', $occupancy->unit->house_id)
             ->where('month', $mois . '-01')
             ->where('status', PeriodStatus::Closed)
-            ->whereHas('house')
+            ->whereHas('house', fn ($q) => $q->whereNull('deleted_at'))
             ->first();
     }
 }

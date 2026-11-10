@@ -52,7 +52,7 @@ final class HouseAlerts
                     'tone' => $late ? 'danger' : 'neutral',
                     'message' => sprintf(
                         '%s : %d relevé%s de fin de mois %s.',
-                        Str::ucfirst($month->locale('fr')->isoFormat('MMMM YYYY')),
+                        Str::ucfirst($month->settings(['locale' => 'fr'])->isoFormat('MMMM YYYY')),
                         $row['missing'],
                         $row['missing'] > 1 ? 's' : '',
                         $late ? 'manquant' . ($row['missing'] > 1 ? 's' : '') . ' : le mois ne peut pas être clôturé' : 'à saisir',
@@ -66,7 +66,7 @@ final class HouseAlerts
         $estimated = MeterReading::query()
             ->where('kind', ReadingKind::MonthEnd)
             ->where('is_estimated', true)
-            ->whereHas('subMeter', fn ($q) => $q->whereNull('removed_on')->whereHas('unit', fn ($u) => $u->where('house_id', $house->id)))
+            ->whereHas('subMeter', fn ($q) => $q->whereNull('removed_on')->whereHas('unit', fn ($u) => $u->whereNull('deleted_at')->where('house_id', $house->id)))
             ->with(['subMeter.unit', 'billingPeriod'])
             ->get()
             ->filter(fn (MeterReading $r): bool => ! MeterReading::query()
@@ -101,6 +101,9 @@ final class HouseAlerts
                 continue;
             }
             $first = $lots->first();
+            if ($first === null) {
+                continue;
+            }
             $alerts[] = [
                 'type' => 'credit_remaining',
                 'tone' => 'info',

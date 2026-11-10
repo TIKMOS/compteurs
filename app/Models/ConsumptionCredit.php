@@ -23,6 +23,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $created_in_billing_period_id
  * @property string $quantity
  * @property string $unit_price fraction exacte
+ * @property-read Occupancy|null $occupancy null : crédit du propriétaire
+ * @property-read BillingPeriod $originPeriod
+ * @property-read BillingPeriod $createdInPeriod
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, CreditMovement> $movements
  */
 #[Fillable(['occupancy_id', 'unit_id', 'utility', 'origin_billing_period_id', 'created_in_billing_period_id', 'quantity', 'unit_price'])]
 final class ConsumptionCredit extends Model

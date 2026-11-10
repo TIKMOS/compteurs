@@ -104,7 +104,7 @@ final class ReopenBillingPeriod
         if ($lastClosed === null || ! $lastClosed->equalTo($period->month)) {
             throw new ReopenRefusedException(sprintf(
                 'Seul le dernier mois clôturé (%s) peut être rouvert.',
-                $lastClosed?->locale('fr')->isoFormat('MMMM YYYY') ?? '—',
+                $lastClosed?->settings(['locale' => 'fr'])->isoFormat('MMMM YYYY') ?? '—',
             ));
         }
 

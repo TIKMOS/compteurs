@@ -176,8 +176,9 @@ final class HistoryXlsxController
             'au' => ['nullable', 'date_format:Y-m'],
         ], [], ['du' => 'mois de début', 'au' => 'mois de fin']);
 
-        $to = $request->filled('au') ? CarbonImmutable::createFromFormat('!Y-m', $request->string('au')->toString()) : CarbonImmutable::now()->startOfMonth();
-        $from = $request->filled('du') ? CarbonImmutable::createFromFormat('!Y-m', $request->string('du')->toString()) : $to->subMonths(11);
+        // Format déjà validé ci-dessus (Y-m) : parse() suffit.
+        $to = $request->filled('au') ? CarbonImmutable::parse($request->string('au')->toString() . '-01') : CarbonImmutable::now()->startOfMonth();
+        $from = $request->filled('du') ? CarbonImmutable::parse($request->string('du')->toString() . '-01') : $to->subMonths(11);
 
         if ($from->greaterThan($to)) {
             throw ValidationException::withMessages(['du' => 'Le mois de début doit précéder le mois de fin.']);

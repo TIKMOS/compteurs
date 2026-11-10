@@ -17,6 +17,7 @@ use App\Modules\Metering\Support\Journal;
 use App\Shared\Enums\ReadingKind;
 use App\Shared\Support\Milli;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 
 /**
  * Estime l'index de fin de mois d'un décompteur non relevé (UC-11, EF-22, EF-23, EF-25) :
@@ -57,6 +58,9 @@ final class EstimateMeterReading
                     $previous = $reading;
                 }
             }
+
+            // La pose précède toujours la fin du mois affiché : il y a un relevé de départ.
+            $previous ??= throw new LogicException('Aucun relevé avant la fin du mois pour ce décompteur.');
 
             $history = $this->history->forUnit($meter->unit()->withTrashed()->firstOrFail(), $meter->utility, $period->month);
             $estimated = $this->estimator->estimate($previous->index, $previous->readOn, $monthEnd, $history);

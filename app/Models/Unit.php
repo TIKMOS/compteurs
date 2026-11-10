@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $ulid
  * @property int $house_id
  * @property string $label
+ * @property-read House $house (archivé compris)
  */
 #[Fillable(['label'])]
 final class Unit extends Model
@@ -51,7 +52,8 @@ final class Unit extends Model
      */
     public function house(): BelongsTo
     {
-        return $this->belongsTo(House::class);
+        // Le vrai parent, même archivé : les écrans qui doivent l'ignorer filtrent deleted_at.
+        return $this->belongsTo(House::class)->withTrashed();
     }
 
     /**

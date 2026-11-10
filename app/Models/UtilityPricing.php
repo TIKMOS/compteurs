@@ -26,6 +26,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $cap_to_actual
  * @property CarbonImmutable $effective_from
  * @property int $created_by
+ * @property-read User $author
+ * @property-read House $house (archivé compris)
  */
 #[Fillable(['utility', 'mode', 'fixed_unit_price', 'cap_to_actual', 'effective_from', 'created_by'])]
 final class UtilityPricing extends Model
@@ -35,7 +37,8 @@ final class UtilityPricing extends Model
      */
     public function house(): BelongsTo
     {
-        return $this->belongsTo(House::class);
+        // Le vrai parent, même archivé : les écrans qui doivent l'ignorer filtrent deleted_at.
+        return $this->belongsTo(House::class)->withTrashed();
     }
 
     /**

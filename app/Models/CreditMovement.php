@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property CreditMovementKind $kind
  * @property string $quantity
  * @property string|null $value fraction exacte en FCFA, pour un solde
+ * @property-read ConsumptionCredit $credit
  */
 #[Fillable(['billing_period_id', 'kind', 'quantity', 'value'])]
 final class CreditMovement extends Model

@@ -47,7 +47,7 @@ final class RecordUtilityBill
             }
 
             $attributes = [
-                'main_meter_id' => $period->house->mainMeter($utility)->id,
+                'main_meter_id' => $period->house->requireMainMeter($utility)->id,
                 'total_amount' => $totalAmount,
                 'main_consumption' => $mainConsumption,
             ];

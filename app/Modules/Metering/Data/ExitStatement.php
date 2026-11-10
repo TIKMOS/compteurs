@@ -11,6 +11,7 @@ use App\Models\Unit;
 use App\Shared\Enums\Utility;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
+use LogicException;
 
 /**
  * Fiche de sortie d'un locataire (D-11, D-14, D-15) : derniers index, crédit converti en FCFA,
@@ -51,6 +52,6 @@ final readonly class ExitStatement
 
     public function fileName(): string
     {
-        return Str::slug('fiche de sortie ' . $this->unit->label . ' ' . $this->occupancy->tenant->name . ' ' . $this->occupancy->ended_on->format('Y-m-d')) . '.pdf';
+        return Str::slug('fiche de sortie ' . $this->unit->label . ' ' . $this->occupancy->tenant->name . ' ' . ($this->occupancy->ended_on ?? throw new LogicException('Fiche de sortie d\'une occupation en cours.'))->format('Y-m-d')) . '.pdf';
     }
 }

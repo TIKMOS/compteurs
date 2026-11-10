@@ -25,6 +25,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $index_value « 1534.500 »
  * @property bool $is_estimated
  * @property string|null $estimation_basis
+ * @property-read SubMeter $subMeter
+ * @property-read BillingPeriod $billingPeriod
+ * @property-read Occupancy|null $occupancy
  */
 #[Fillable(['sub_meter_id', 'billing_period_id', 'occupancy_id', 'kind', 'read_on', 'index_value', 'is_estimated', 'estimation_basis'])]
 final class MeterReading extends Model

@@ -93,7 +93,7 @@ final class CloseBillingPeriod
     {
         $price = $allocation->price ?? throw new LogicException('Prix non résolu.');
         $bill = $period->bills()->firstOrNew(['utility' => $utility]);
-        $bill->main_meter_id ??= $period->house->mainMeter($utility)->id;
+        $bill->main_meter_id ??= $period->house->requireMainMeter($utility)->id;
 
         $bill->forceFill([
             'utility_pricing_id' => $pricing->id,
@@ -135,7 +135,7 @@ final class CloseBillingPeriod
             foreach ($credit->createdLots as $lot) {
                 $origin = BillingPeriod::query()
                     ->where('house_id', $period->house_id)
-                    ->where('month', CarbonImmutable::createFromFormat('!Y-m', $lot->originMonth)->toDateString())
+                    ->where('month', $lot->originMonth . '-01')
                     ->firstOrFail();
 
                 $record = ConsumptionCredit::query()->create([

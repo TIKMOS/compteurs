@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $tenant_id
  * @property CarbonImmutable $started_on
  * @property CarbonImmutable|null $ended_on
+ * @property-read Unit $unit logement (archivé compris)
+ * @property-read Tenant $tenant locataire (archivé compris)
  */
 #[Fillable(['unit_id', 'tenant_id', 'started_on', 'ended_on'])]
 final class Occupancy extends Model

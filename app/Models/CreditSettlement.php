@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $credit_value
  * @property int $deducted_amount
  * @property int $refund_due
+ * @property-read Occupancy $occupancy
+ * @property-read BillingPeriod $billingPeriod
  */
 #[Fillable(['occupancy_id', 'statement_total', 'credit_value', 'deducted_amount', 'refund_due'])]
 final class CreditSettlement extends Model

@@ -28,6 +28,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $removed_on
  * @property string|null $removal_index
  * @property int|null $replaces_sub_meter_id
+ * @property-read Unit $unit (archivé compris)
  */
 #[Fillable(['utility', 'serial_number', 'installed_on', 'install_index', 'replaces_sub_meter_id'])]
 final class SubMeter extends Model
@@ -45,7 +46,8 @@ final class SubMeter extends Model
      */
     public function unit(): BelongsTo
     {
-        return $this->belongsTo(Unit::class);
+        // Le vrai parent, même archivé : les écrans qui doivent l'ignorer filtrent deleted_at.
+        return $this->belongsTo(Unit::class)->withTrashed();
     }
 
     public function isActive(): bool

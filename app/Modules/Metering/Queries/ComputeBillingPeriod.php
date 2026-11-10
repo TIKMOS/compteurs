@@ -29,6 +29,7 @@ use App\Shared\Support\ValueTooLargeException;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use LogicException;
 
 /**
  * Calcule un mois à partir de la base, sans rien écrire (UC-13, CONCEPTION.md § 3.3) :
@@ -109,7 +110,8 @@ final class ComputeBillingPeriod
         $bills = [];
 
         foreach (Utility::cases() as $utility) {
-            $pricing = $house->pricingFor($utility, $month);
+            // Chaque maison a une tarification par fluide dès sa création (CreateHouse).
+            $pricing = $house->pricingFor($utility, $month) ?? throw new LogicException("Tarification {$utility->value} absente.");
             $pricings[$utility->value] = $pricing;
             $bill = $period->bill($utility)?->total_amount;
             $bills[$utility->value] = $bill;
@@ -187,13 +189,12 @@ final class ComputeBillingPeriod
      */
     private function metersOfMonth(Unit $unit, Utility $utility, CarbonImmutable $month, CarbonImmutable $monthEnd): array
     {
-        return $unit->subMeters
+        return array_values($unit->subMeters
             ->filter(fn (SubMeter $m): bool => $m->utility === $utility
                 && $m->installed_on->lessThanOrEqualTo($monthEnd)
                 && ($m->removed_on === null || $m->removed_on->greaterThanOrEqualTo($month)))
             ->sortBy(fn (SubMeter $m): string => $m->installed_on->toDateString())
-            ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -272,10 +273,9 @@ final class ComputeBillingPeriod
      */
     private function spans(Unit $unit): array
     {
-        return $unit->occupancies
+        return array_values($unit->occupancies
             ->map(fn (Occupancy $o): OccupancySpan => new OccupancySpan($o->id, $o->started_on, $o->ended_on))
-            ->values()
-            ->all();
+            ->all());
     }
 
     /**

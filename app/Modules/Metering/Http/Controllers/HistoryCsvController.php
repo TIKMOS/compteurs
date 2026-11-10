@@ -8,10 +8,10 @@ use App\Models\Charge;
 use App\Models\House;
 use App\Modules\Metering\Data\ResolvedPrice;
 use App\Shared\Enums\PeriodStatus;
-use App\Shared\Support\Fraction;
 use App\Shared\Support\Milli;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -39,7 +39,7 @@ final class HistoryCsvController
         $fileName = Str::slug('historique ' . $house->name) . '.csv';
 
         return response()->streamDownload(function () use ($charges): void {
-            $out = fopen('php://output', 'wb');
+            $out = fopen('php://output', 'wb') ?: throw new RuntimeException('Sortie de l\'export indisponible.');
             fwrite($out, "\u{FEFF}");
             fputcsv($out, self::HEADERS, ';', '"', '');
 
@@ -56,7 +56,7 @@ final class HistoryCsvController
                     self::decimal($charge->raw_consumption),
                     self::decimal($charge->credit_applied),
                     self::decimal($charge->consumption),
-                    $price === null ? '' : str_replace("\u{00A0}", '', ResolvedPrice::format(Fraction::parse($bill->unit_price))),
+                    $price === null ? '' : str_replace("\u{00A0}", '', ResolvedPrice::format($price->applied)),
                     $price === null ? '' : ($price->source->value === 'fixed' ? 'prix fixé' : 'prix réel'),
                     $charge->amount,
                     $charge->is_estimated ? 'oui' : 'non',

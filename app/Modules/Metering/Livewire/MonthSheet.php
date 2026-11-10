@@ -55,15 +55,14 @@ final readonly class MonthSheet
                 }
             }
 
-            $occupants = $unit->occupancies
+            $occupants = array_values($unit->occupancies
                 ->filter(fn (Occupancy $o): bool => $o->started_on->lessThanOrEqualTo($monthEnd)
                     && ($o->ended_on === null || $o->ended_on->greaterThanOrEqualTo($month)))
                 ->sortBy(fn (Occupancy $o): string => $o->started_on->toDateString())
                 ->map(fn (Occupancy $o): string => $o->tenant->name
                     . ($o->started_on->greaterThan($month) ? ' (entrée le ' . $o->started_on->format('d/m') . ')' : '')
                     . ($o->ended_on !== null && $o->ended_on->lessThanOrEqualTo($monthEnd) ? ' (sortie le ' . $o->ended_on->format('d/m') . ')' : ''))
-                ->values()
-                ->all();
+                ->all());
 
             if ($meters !== []) {
                 $rows[] = ['unit' => $unit, 'occupants' => $occupants, 'meters' => $meters];
@@ -116,7 +115,7 @@ final readonly class MonthSheet
             ReadingKind::Entry => 'entrée',
             ReadingKind::Exit => 'sortie',
             ReadingKind::Removal => 'dépose',
-            ReadingKind::MonthEnd => $reading->readOn < $month ? 'fin ' . CarbonImmutable::instance($reading->readOn)->locale('fr')->isoFormat('MMMM') : 'fin de mois',
+            ReadingKind::MonthEnd => $reading->readOn < $month ? 'fin ' . CarbonImmutable::instance($reading->readOn)->settings(['locale' => 'fr'])->isoFormat('MMMM') : 'fin de mois',
         };
 
         return sprintf('%s le %s (%s)', Milli::format($reading->index), $reading->readOn->format('d/m'), $what);

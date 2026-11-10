@@ -24,7 +24,7 @@ final class TenantStatementPdfController
         $period = $house->billingPeriods()->where('month', $mois . '-01')->first();
         $unit = $occupancy->unit;
 
-        abort_if($period === null || ! $period->isClosed() || $unit === null || $unit->house_id !== $house->id, 404);
+        abort_if($period === null || ! $period->isClosed() || $unit->house_id !== $house->id, 404);
 
         $statement = $build->execute($period, $occupancy);
         abort_if($statement->utilities === [], 404);

@@ -1,10 +1,9 @@
 includes:
     - vendor/larastan/larastan/extension.neon
 
-# Revue avant déploiement (docs/REVUE.md, I-6) : niveau 5 au minimum, lancé par `composer lint`.
-# ENF-14 vise le niveau 8 : à relever par étapes (M-5).
+# Niveau 8 exigé par ENF-14 (docs/CONCEPTION.md), lancé par `composer lint` et par la CI.
 parameters:
-    level: 5
+    level: 8
     paths:
         - app/
         - config/

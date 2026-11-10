@@ -12,6 +12,7 @@ use App\Shared\Enums\PriceSource;
 use App\Shared\Enums\PricingMode;
 use App\Shared\Support\Fraction;
 use App\Shared\Support\SafeInt;
+use LogicException;
 
 /**
  * Prix appliqué d'un fluide pour un mois (EF-26, EF-41, EF-43, EF-44, D-23). Classe pure.
@@ -45,12 +46,14 @@ final class UnitPriceResolver
         }
 
         if ($rule->mode === PricingMode::BillSplit) {
-            return new ResolvedPrice($rule, $actual, $actual, PriceSource::Actual);
+            // Mode 1 : facture et consommation vérifiées ci-dessus, le prix réel existe.
+            return new ResolvedPrice($rule, $actual, $actual ?? throw new LogicException('Prix réel absent en mode 1.'), PriceSource::Actual);
         }
 
         $fixed = Fraction::fromDecimal((string) $rule->fixedUnitPrice);
 
-        if ($rule->capToActual && $fixed->compareTo($actual) >= 0) {
+        // Plafonné : facture et consommation vérifiées ci-dessus (requiresBill), $actual n'est pas nul.
+        if ($rule->capToActual && $actual !== null && $fixed->compareTo($actual) >= 0) {
             return new ResolvedPrice($rule, $actual, $actual, PriceSource::Actual);
         }
 

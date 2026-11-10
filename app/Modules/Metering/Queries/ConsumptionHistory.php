@@ -14,8 +14,8 @@ use App\Shared\Enums\PriceSource;
 use App\Shared\Enums\Utility;
 use App\Shared\Support\Fraction;
 use App\Shared\Support\Milli;
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 
 /**
  * Historique des 12 derniers mois clôturés d'un logement ou d'un locataire (lot 2, tranche 4) :
@@ -63,11 +63,11 @@ final class ConsumptionHistory
     }
 
     /**
-     * @param callable(Builder<Charge>): mixed $scope
+     * @param Closure(Builder<Charge>): mixed $scope
      *
      * @return list<array{period: BillingPeriod, total: int, utilities: array<string, array{consumption: int, amount: int, prices: list<string>, estimated: bool, regularized: bool}>}>
      */
-    private function build(callable $scope, int $limit): array
+    private function build(Closure $scope, int $limit): array
     {
         $periods = BillingPeriod::query()
             ->where('status', PeriodStatus::Closed)
@@ -77,7 +77,6 @@ final class ConsumptionHistory
             ->with('house')
             ->get();
 
-        /** @var Collection<int, Charge> $charges */
         $charges = Charge::query()
             ->tap($scope)
             ->whereHas('utilityBill', fn (Builder $q) => $q->whereIn('billing_period_id', $periods->pluck('id')))
@@ -89,7 +88,7 @@ final class ConsumptionHistory
         foreach ($periods as $period) {
             $utilities = [];
             foreach (Utility::cases() as $utility) {
-                $lines = ($charges[$period->id] ?? collect())->filter(fn (Charge $c): bool => $c->utilityBill->utility === $utility);
+                $lines = $charges->get($period->id, collect())->filter(fn (Charge $c): bool => $c->utilityBill->utility === $utility);
                 if ($lines->isEmpty()) {
                     continue;
                 }
@@ -98,7 +97,7 @@ final class ConsumptionHistory
                     'consumption' => $lines->sum(fn (Charge $c): int => Milli::fromDecimal($c->consumption)),
                     'amount' => (int) $lines->sum('amount'),
                     // Un seul prix en général ; plusieurs si le locataire a deux logements dans deux maisons.
-                    'prices' => $lines->map(fn (Charge $c): string => self::price($c))->unique()->values()->all(),
+                    'prices' => array_values($lines->map(fn (Charge $c): string => self::price($c))->unique()->all()),
                     'estimated' => $lines->contains(fn (Charge $c): bool => $c->is_estimated),
                     'regularized' => $lines->contains(fn (Charge $c): bool => $c->includes_regularization),
                 ];

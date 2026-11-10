@@ -24,7 +24,7 @@ final class SharedStatementController
         }
 
         $unit = $occupancy->unit;
-        $period = $unit?->house?->billingPeriods()->where('month', $mois . '-01')->first();
+        $period = $unit->house->billingPeriods()->where('month', $mois . '-01')->first();
         abort_if($period === null || ! $period->isClosed(), 404);
 
         $statement = $build->execute($period, $occupancy);

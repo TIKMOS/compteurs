@@ -43,7 +43,7 @@ final class MissingMonthEndReadings
         }
 
         $meters = SubMeter::query()
-            ->whereHas('unit', fn ($q) => $q->where('house_id', $house->id))
+            ->whereHas('unit', fn ($q) => $q->whereNull('deleted_at')->where('house_id', $house->id))
             ->get()
             ->filter(fn (SubMeter $m): bool => $m->needsMonthEndReading($month));
 

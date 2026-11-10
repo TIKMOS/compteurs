@@ -26,6 +26,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $theoretical_amount
  * @property int $rounding_adjustment
  * @property int $amount
+ * @property-read UtilityBill $utilityBill
+ * @property-read Unit $unit logement (archivé compris)
+ * @property-read Occupancy|null $occupancy null : part du propriétaire (vacance)
  */
 #[Fillable(['unit_id', 'occupancy_id', 'kind', 'raw_consumption', 'credit_applied', 'consumption', 'is_estimated', 'includes_regularization', 'theoretical_amount', 'rounding_adjustment', 'amount'])]
 final class Charge extends Model

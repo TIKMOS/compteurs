@@ -94,7 +94,7 @@ final class ChangeUtilityPricing
                 'Calcul %s : %s, à partir de %s',
                 ComputeBillingPeriod::of($utility->label()),
                 $rule->summary($utility->unit()),
-                $effectiveFrom->locale('fr')->isoFormat('MMMM YYYY'),
+                $effectiveFrom->settings(['locale' => 'fr'])->isoFormat('MMMM YYYY'),
             ), $version, [
                 'utility' => $utility->value,
                 'mode' => $rule->mode->value,

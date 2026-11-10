@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable $month 1er du mois
  * @property PeriodStatus $status
  * @property CarbonImmutable|null $closed_at
+ * @property-read House $house (archivé compris)
  */
 #[Fillable(['month', 'status'])]
 final class BillingPeriod extends Model
@@ -34,7 +35,8 @@ final class BillingPeriod extends Model
      */
     public function house(): BelongsTo
     {
-        return $this->belongsTo(House::class);
+        // Le vrai parent, même archivé : les écrans qui doivent l'ignorer filtrent deleted_at.
+        return $this->belongsTo(House::class)->withTrashed();
     }
 
     /**
@@ -92,7 +94,7 @@ final class BillingPeriod extends Model
      */
     public function label(): string
     {
-        return $this->month->locale('fr')->isoFormat('MMMM YYYY');
+        return $this->month->settings(['locale' => 'fr'])->isoFormat('MMMM YYYY');
     }
 
     /**

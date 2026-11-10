@@ -96,7 +96,7 @@ final class FrenchNumber
             return $unit === 0 ? 'quatre-vingt' . ($final ? 's' : '') : 'quatre-vingt-' . self::UNITS[$unit];
         }
 
-        $base = self::TENS[$ten];
+        $base = self::TENS[$ten] ?? throw new InvalidArgumentException("belowHundred attend un nombre de 0 à 99, reçu {$n}.");
 
         return match (true) {
             $unit === 0 => $base,

@@ -12,6 +12,7 @@ use App\Models\Occupancy;
 use App\Models\Payment;
 use App\Shared\Enums\PaymentStatus;
 use App\Shared\Enums\PeriodStatus;
+use LogicException;
 
 /**
  * Suivi des paiements d'une maison (UC-18) : pour chaque locataire et chaque mois clôturé, dû,
@@ -21,7 +22,8 @@ final class HouseBalances
 {
     /**
      * @return array{
-     *     tenants: list<array{occupancy: Occupancy, months: list<array{period: BillingPeriod, due: int, paid: int, remaining: int, payments: list<Payment>}>, remaining: int}>,
+     *     tenants: list<array{occupancy: Occupancy, months: list<array{period: BillingPeriod, due: int, paid: int, remaining: int, status: PaymentStatus, payments: list<Payment>}>, remaining: int}>,
+     *     unpaid: list<array{occupancy: Occupancy, period: BillingPeriod, due: int, paid: int, remaining: int, status: PaymentStatus, payments: list<Payment>}>,
      *     totalRemaining: int,
      *     refunds: list<CreditSettlement>,
      *     totalRefunds: int
@@ -59,12 +61,13 @@ final class HouseBalances
         $tenants = [];
         foreach ($due as $key => $amount) {
             [$occupancyId, $periodId] = array_map('intval', explode('|', $key));
-            $monthPayments = $payments->where('occupancy_id', $occupancyId)->where('billing_period_id', $periodId)->values()->all();
+            $monthPayments = array_values($payments->where('occupancy_id', $occupancyId)->where('billing_period_id', $periodId)->all());
             $paid = array_sum(array_map(fn (Payment $p): int => $p->amount, $monthPayments));
 
-            $tenants[$occupancyId] ??= ['occupancy' => $occupancies[$occupancyId], 'months' => [], 'remaining' => 0];
+            // Participations et périodes viennent des mêmes requêtes : les deux existent forcément.
+            $tenants[$occupancyId] ??= ['occupancy' => $occupancies->get($occupancyId) ?? throw new LogicException('Occupation introuvable.'), 'months' => [], 'remaining' => 0];
             $tenants[$occupancyId]['months'][] = [
-                'period' => $periods[$periodId],
+                'period' => $periods->get($periodId) ?? throw new LogicException('Période introuvable.'),
                 'due' => $amount,
                 'paid' => $paid,
                 'remaining' => $amount - $paid,
@@ -84,11 +87,10 @@ final class HouseBalances
             ?: strnatcasecmp($a['occupancy']->unit->label, $b['occupancy']->unit->label)
             ?: strcmp($a['occupancy']->tenant->name, $b['occupancy']->tenant->name));
 
-        $refunds = $deducted
+        $refunds = array_values($deducted
             ->filter(fn (CreditSettlement $s): bool => $s->refund_due > 0 && $s->refunded_at === null)
             ->each(fn (CreditSettlement $s) => $s->setRelation('billingPeriod', $periods[$s->billing_period_id])->load('occupancy.tenant', 'occupancy.unit'))
-            ->values()
-            ->all();
+            ->all());
 
         // Liste des impayés de la maison : répartitions partielles ou impayées, plus récentes d'abord.
         $unpaid = [];

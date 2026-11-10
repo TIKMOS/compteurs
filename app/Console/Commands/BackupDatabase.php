@@ -9,6 +9,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 use Symfony\Component\Process\Process;
 use Throwable;
 
@@ -32,6 +33,14 @@ final class BackupDatabase extends Command
         {--mysqldump=mysqldump : Chemin du programme mysqldump (« aucun » : dump PHP directement)}';
 
     protected $description = 'Sauvegarde la base de données (fichier .sql.gz) et supprime les sauvegardes trop anciennes';
+
+    /**
+     * @return resource
+     */
+    private static function openGz(string $file)
+    {
+        return gzopen($file, 'wb6') ?: throw new RuntimeException("Impossible d'écrire la sauvegarde {$file} (droits sur storage/backups ?).");
+    }
 
     public function handle(): int
     {
@@ -88,7 +97,7 @@ final class BackupDatabase extends Command
                 (string) ($config['database'] ?? ''),
             ], env: ['MYSQL_PWD' => (string) ($config['password'] ?? '')], timeout: 600);
 
-            $gz = gzopen($file, 'wb6');
+            $gz = self::openGz($file);
             $process->run(function (string $type, string $buffer) use ($gz): void {
                 if ($type === Process::OUT) {
                     gzwrite($gz, $buffer);
@@ -120,7 +129,7 @@ final class BackupDatabase extends Command
         $mysql = $connection->getDriverName() === 'mysql';
         $quote = static fn (string $name): string => $mysql ? '`' . str_replace('`', '``', $name) . '`' : '"' . str_replace('"', '""', $name) . '"';
 
-        $gz = gzopen($file, 'wb6');
+        $gz = self::openGz($file);
         gzwrite($gz, '-- Sauvegarde compteurs du ' . now()->toDateTimeString() . "\n");
         gzwrite($gz, $mysql ? "SET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS=0;\n\n" : "PRAGMA foreign_keys=OFF;\nBEGIN TRANSACTION;\n\n");
 
@@ -175,7 +184,7 @@ final class BackupDatabase extends Command
                 [$table],
             );
 
-            return array_map(static fn ($row): string => (string) $row->name, $rows);
+            return array_values(array_map(static fn ($row): string => (string) $row->name, $rows));
         }
 
         // SQLite : table_xinfo signale les colonnes générées par hidden = 2 (virtuelle) ou 3 (stockée).

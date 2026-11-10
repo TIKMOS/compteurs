@@ -19,7 +19,7 @@ final class ExitStatementPdfController
     public function __invoke(House $house, Occupancy $occupancy, BuildExitStatement $build): PdfBuilder
     {
         Gate::authorize('view', $house);
-        abort_if($occupancy->unit?->house_id !== $house->id, 404);
+        abort_if($occupancy->unit->house_id !== $house->id, 404);
 
         $statement = $build->execute($occupancy);
         abort_if($statement === null, 404);

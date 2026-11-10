@@ -102,7 +102,7 @@ final class BuildTenantStatement
         $segmentsCache = [];
         $statements = [];
         foreach ($occupancies as $occupancy) {
-            $unit = $units->get($occupancy->unit_id);
+            $unit = $units->get($occupancy->unit_id) ?? throw new LogicException('Logement introuvable.');
             $occupancy->setRelation('unit', $unit);
             $occupancy->setRelation('tenant', $tenants->get($occupancy->tenant_id));
 
@@ -142,7 +142,7 @@ final class BuildTenantStatement
                     'regularization' => $charge->includes_regularization,
                     'estimationBasis' => $estimatedEnd === null ? null : $readings->firstWhere('is_estimated', true)?->estimation_basis,
                     // Photos des relevés de fin de mois du logement (preuve, lot 3).
-                    'photoReadingIds' => $readings->whereNotNull('photo_path')->pluck('id')->sort()->values()->all(),
+                    'photoReadingIds' => array_values($readings->whereNotNull('photo_path')->sortBy('id')->map(fn (MeterReading $r): int => $r->id)->all()),
                 ];
             }
 

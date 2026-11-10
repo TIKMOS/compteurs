@@ -23,6 +23,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property CarbonImmutable $paid_on
  * @property PaymentMethod $method
  * @property string|null $note
+ * @property-read Occupancy $occupancy
+ * @property-read BillingPeriod $billingPeriod
  */
 #[Fillable(['occupancy_id', 'amount', 'paid_on', 'method', 'note', 'recorded_by'])]
 final class Payment extends Model

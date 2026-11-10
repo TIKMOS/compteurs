@@ -22,7 +22,7 @@ final class ReadingPhotoController
     public function owner(House $house, MeterReading $reading): StreamedResponse
     {
         Gate::authorize('view', $house);
-        abort_unless($reading->subMeter?->unit()->withTrashed()->value('house_id') === $house->id, 404);
+        abort_unless($reading->subMeter->unit()->withTrashed()->value('house_id') === $house->id, 404);
 
         return $this->stream($reading);
     }
@@ -35,7 +35,7 @@ final class ReadingPhotoController
         $period = $reading->billingPeriod;
         $occupied = Occupancy::query()
             ->where('tenant_id', $link->tenant_id)
-            ->where('unit_id', $reading->subMeter?->unit_id)
+            ->where('unit_id', $reading->subMeter->unit_id)
             ->where('started_on', '<=', $period->monthEnd()->toDateString())
             ->where(fn ($q) => $q->whereNull('ended_on')->orWhere('ended_on', '>=', $period->month->toDateString()))
             ->exists();

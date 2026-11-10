@@ -192,7 +192,7 @@ n'a pas permis de le simuler. Le code suit l'API `Livewire.interceptRequest` de 
 | M-2 | Corrigé | Clé de limitation : numéro normalisé (`BeninPhone::normalize`) ; + 20 essais par minute par adresse IP, tous comptes confondus. Tests dans `AuthSecurityTest`. |
 | M-3 | Corrigé | (pendant la revue) |
 | M-4 | Corrigé | (pendant la revue) |
-| M-5 | En cours | PHPStan niveau 8 : tranche suivante. |
+| M-5 | Corrigé | PHPStan **niveau 8 sans erreur** (159 erreurs au départ), réglé dans `phpstan.neon` et vérifié par `composer lint` et la CI. Relations obligatoires typées non nulles ; relations vers la maison et le logement en `withTrashed()` (le vrai parent, même archivé), avec filtre explicite là où les archivés doivent être ignorés (portail locataire, relevés manquants, alertes, saisie) — `ArchivedParentsTest`. Valeurs qui ne peuvent pas manquer (compteur principal, tarification, prix réel en mode 1) : exception explicite au lieu d'un accès sur null. |
 | M-6 | Corrigé | `BuildTenantStatement::executeMany()` (fiches d'un mois en une fois), crédits groupés dans `PeriodSummary`, paiements groupés dans l'export Excel. Résultat du mois : 99 → 35 requêtes ; export Excel : 19 → 9. |
 | M-7 | Corrigé | `SubMeter::readingChain(fromLoaded: true)` dans les affichages en lecture seule (les actions relisent toujours la base). Saisie : 16 → 9 requêtes ; tableau de bord : 32 → 25. `QueryCountTest` interdit toute requête répétée plus de deux fois sur ces pages. |
 | M-8 | À mesurer | Temps des PDF à mesurer sur Hostinger après la mise en ligne (rien à corriger en local). |

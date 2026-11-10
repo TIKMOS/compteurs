@@ -28,6 +28,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $actual_unit_price fraction exacte « 1773/13 »
  * @property string|null $unit_price fraction exacte du prix appliqué
  * @property string|null $price_source figé à la clôture
+ * @property-read BillingPeriod $billingPeriod
+ * @property-read MainMeter $mainMeter
  */
 #[Fillable(['main_meter_id', 'utility', 'total_amount', 'main_consumption'])]
 final class UtilityBill extends Model

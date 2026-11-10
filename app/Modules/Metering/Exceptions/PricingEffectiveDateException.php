@@ -15,8 +15,8 @@ final class PricingEffectiveDateException extends DomainException
 {
     public function __construct(CarbonImmutable $lastClosedMonth)
     {
-        $closed = Str::ucfirst($lastClosedMonth->locale('fr')->isoFormat('MMMM YYYY'));
-        $first = $lastClosedMonth->addMonthNoOverflow()->locale('fr')->isoFormat('MMMM YYYY');
+        $closed = Str::ucfirst($lastClosedMonth->settings(['locale' => 'fr'])->isoFormat('MMMM YYYY'));
+        $first = $lastClosedMonth->addMonthNoOverflow()->settings(['locale' => 'fr'])->isoFormat('MMMM YYYY');
 
         parent::__construct("{$closed} est clôturé : le nouveau prix peut s'appliquer au plus tôt à {$first}.");
     }
