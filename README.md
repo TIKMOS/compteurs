@@ -70,6 +70,23 @@ La page de connexion est sur <http://localhost:8000/login>. En local, les emails
 l'adresse, mot de passe oublié) ne partent pas : ils sont écrits dans `storage/logs/laravel.log`,
 où l'on trouve le lien à ouvrir.
 
+## Administration
+
+Le panneau d'administration est sur <http://localhost:8000/admin> : comptes, maisons,
+confirmations de conformité et journal d'activité de tous les propriétaires, en lecture seule
+(`docs/CONCEPTION.md`, H-79). Il n'a pas de page de connexion propre : on se connecte sur `/login`
+avec un compte administrateur.
+
+Un compte devient administrateur par cette commande (le compte doit déjà exister) :
+
+```powershell
+php artisan compteurs:admin adresse@exemple.com            # nommer
+php artisan compteurs:admin adresse@exemple.com --retirer  # retirer
+```
+
+Un administrateur peut ensuite en nommer d'autres depuis le panneau (Comptes › Nommer
+administrateur). En production, lancer la même commande en SSH sur le serveur.
+
 ## Tests et qualité
 
 ```powershell

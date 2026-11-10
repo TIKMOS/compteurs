@@ -38,6 +38,11 @@ Thumbs.db
 # public/build n'est plus commité : la CI (GitHub Actions) compile les assets et les dépose
 # sur le serveur, Hostinger n'ayant pas Node (docs/DEPLOIEMENT.md). En local : npm run build.
 /public/build
+# Assets du panneau d'administration Filament : republiés par `php artisan filament:upgrade`
+# à chaque `composer install` (composer.json, post-autoload-dump).
+/public/css/filament
+/public/js/filament
+/public/fonts/filament
 # Fichiers de travail du déploiement sur le serveur (scripts/deploy.sh).
 /.deploy
 /public/hot

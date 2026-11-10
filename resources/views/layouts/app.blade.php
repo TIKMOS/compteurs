@@ -40,6 +40,13 @@
                         {{ $text }}
                     </a>
                 @endforeach
+                {{-- UC-21 : panneau d'administration, visible des seuls administrateurs. --}}
+                @if (auth()->user()?->is_admin)
+                    <a href="{{ url('/admin') }}"
+                        class="ml-auto px-3 py-2.5 text-sm font-medium border-b-2 border-transparent text-sand-600 hover:text-sand-900">
+                        Administration
+                    </a>
+                @endif
             </nav>
         </header>
 

@@ -10,3 +10,6 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [
   répartition exacte au franc près ; 46 tests.
 - Socle Laravel 13 : authentification Fortify (email ou téléphone béninois), écrans et design
   system repris d'artisandubenin, Livewire 4, Tailwind CSS 4, Vite 8, Pest 5, Pint.
+- Administration (UC-21, H-79) : panneau Filament 5 `/admin` en lecture seule (comptes, maisons,
+  confirmations de conformité, journal d'activité), colonne `users.is_admin`, commande
+  `compteurs:admin`.
