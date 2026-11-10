@@ -1,9 +1,11 @@
 includes:
     - vendor/larastan/larastan/extension.neon
 
-# Niveau 8 exigé par ENF-14 (docs/CONCEPTION.md), lancé par `composer lint` et par la CI.
+# Niveau 5 retenu (décision du 2026-11-10), lancé par `composer lint` et par la CI. ENF-14
+# (docs/CONCEPTION.md) vise le niveau 8 : le code y passe aussi sans erreur (commit 437b1e4),
+# mais ce niveau n'est plus exigé.
 parameters:
-    level: 8
+    level: 5
     paths:
         - app/
         - config/
